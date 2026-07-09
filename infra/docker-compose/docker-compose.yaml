@@ -1,0 +1,330 @@
+version: "3.9"
+
+# =========================================================
+# AirServiz - Sprint 2
+# Servicios: API Gateway (Kong) | Bus de mensajería (Kafka)
+#            Cache (Redis) | Capa de datos (Postgres x3)
+#            auth-service | booking-service | notification-service
+# =========================================================
+
+networks:
+  airserviz-net:
+    driver: bridge
+
+volumes:
+  kong-db-data:
+  kafka-data:
+  zookeeper-data:
+  postgres-users-data:
+  postgres-bookings-data:
+  postgres-catalog-data:
+  postgres-payments-data:
+  redis-data:
+
+services:
+
+  # ---------------------------------------------------
+  # API GATEWAY - Kong
+  # ---------------------------------------------------
+  kong-database:
+    image: postgres:15-alpine
+    container_name: kong-database
+    environment:
+      POSTGRES_USER: kong
+      POSTGRES_DB: kong
+      POSTGRES_PASSWORD: kong
+    volumes:
+      - kong-db-data:/var/lib/postgresql/data
+    networks:
+      - airserviz-net
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "kong"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kong-migrations:
+    image: kong:3.6
+    command: kong migrations bootstrap
+    depends_on:
+      kong-database:
+        condition: service_healthy
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+    networks:
+      - airserviz-net
+
+  kong:
+    image: kong:3.6
+    container_name: kong-gateway
+    depends_on:
+      - kong-migrations
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+    ports:
+      - "8000:8000"   # Proxy (tráfico público)
+      - "8443:8443"   # Proxy SSL
+      - "8001:8001"   # Admin API
+      - "8002:8002"   # Admin GUI
+    networks:
+      - airserviz-net
+
+  # ---------------------------------------------------
+  # BUS DE MENSAJERÍA - Kafka + Zookeeper
+  # ---------------------------------------------------
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: airserviz-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+    networks:
+      - airserviz-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: airserviz-kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "29092:29092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - airserviz-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: airserviz-kafka-ui
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: airserviz
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      - "8080:8080"
+    networks:
+      - airserviz-net
+
+  # ---------------------------------------------------
+  # CACHE - Redis
+  # ---------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: airserviz-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - airserviz-net
+
+  # ---------------------------------------------------
+  # CAPA DE BASE DE DATOS (por servicio - Database per Service)
+  # ---------------------------------------------------
+  postgres-users:
+    image: postgres:15-alpine
+    container_name: postgres-users
+    environment:
+      POSTGRES_USER: users_admin
+      POSTGRES_PASSWORD: change_me
+      POSTGRES_DB: users_db
+    volumes:
+      - postgres-users-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - airserviz-net
+
+  postgres-bookings:
+    image: postgres:15-alpine
+    container_name: postgres-bookings
+    environment:
+      POSTGRES_USER: bookings_admin
+      POSTGRES_PASSWORD: change_me
+      POSTGRES_DB: bookings_db
+    volumes:
+      - postgres-bookings-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - airserviz-net
+
+  postgres-catalog:
+    image: postgres:15-alpine
+    container_name: postgres-catalog
+    environment:
+      POSTGRES_USER: catalog_admin
+      POSTGRES_PASSWORD: change_me
+      POSTGRES_DB: catalog_db
+    volumes:
+      - postgres-catalog-data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    networks:
+      - airserviz-net
+
+  postgres-payments:
+    image: postgres:15-alpine
+    container_name: postgres-payments
+    environment:
+      POSTGRES_USER: payments_admin
+      POSTGRES_PASSWORD: change_me
+      POSTGRES_DB: payments_db
+    volumes:
+      - postgres-payments-data:/var/lib/postgresql/data
+    ports:
+      - "5436:5432"
+    networks:
+      - airserviz-net
+
+  # ---------------------------------------------------
+  # MICROSERVICIOS (placeholders - reemplazar 'build' cuando
+  # exista el Dockerfile de cada servicio)
+  # ---------------------------------------------------
+  user-service:
+    build:
+      context: ../../services/user-service
+    container_name: user-service
+    depends_on:
+      - postgres-users
+    environment:
+      PORT: 3005
+      DB_HOST: postgres-users
+      DB_PORT: 5432
+      DB_NAME: users_db
+      DB_USER: users_admin
+      DB_PASS: change_me
+    ports:
+      - "3005:3005"
+    networks:
+      - airserviz-net
+    profiles: ["services"]   # docker compose --profile services up
+
+  catalog-service:
+    build:
+      context: ../../services/catalog-service
+    container_name: catalog-service
+    depends_on:
+      - postgres-catalog
+    environment:
+      PORT: 3004
+      DB_HOST: postgres-catalog
+      DB_PORT: 5432
+      DB_NAME: catalog_db
+      DB_USER: catalog_admin
+      DB_PASS: change_me
+    ports:
+      - "3004:3004"
+    networks:
+      - airserviz-net
+    profiles: ["services"]
+
+  booking-service:
+    build:
+      context: ../../services/booking-service
+    container_name: booking-service
+    depends_on:
+      - postgres-bookings
+      - kafka
+      - redis
+    environment:
+      DB_HOST: postgres-bookings
+      DB_PORT: 5432
+      DB_NAME: bookings_db
+      DB_USER: bookings_admin
+      DB_PASS: change_me
+      KAFKA_BROKER: kafka:9092
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+      REDIS_HOST: redis
+    ports:
+      - "3002:3002"
+    networks:
+      - airserviz-net
+    profiles: ["services"]
+
+  auth-service:
+    build:
+      context: ../../services/auth-service
+    container_name: auth-service
+    depends_on:
+      - postgres-users
+    environment:
+      PORT: 3001
+      DB_HOST: postgres-users
+      DB_PORT: 5432
+      DB_NAME: users_db
+      DB_USER: users_admin
+      DB_PASS: change_me
+      JWT_SECRET: change_me_to_a_real_secret_32chars
+      JWT_ACCESS_EXPIRES: 15m
+      JWT_REFRESH_EXPIRES: 7d
+    ports:
+      - "3001:3001"
+    networks:
+      - airserviz-net
+    profiles: ["services"]
+
+  notification-service:
+    build:
+      context: ../../services/notification-service
+    container_name: notification-service
+    depends_on:
+      - kafka
+    environment:
+      PORT: 3003
+      KAFKA_BROKER: kafka:9092
+      KAFKA_GROUP_ID: notification-service-group
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+    ports:
+      - "3003:3003"
+    networks:
+      - airserviz-net
+    profiles: ["services"]
+
+  payment-service:
+    build:
+      context: ../../services/payment-service
+    container_name: payment-service
+    depends_on:
+      - postgres-payments
+      - kafka
+    environment:
+      PORT: 3006
+      DB_HOST: postgres-payments
+      DB_PORT: 5432
+      DB_NAME: payments_db
+      DB_USER: payments_admin
+      DB_PASS: change_me
+      KAFKA_BROKER: kafka:9092
+      KAFKA_GROUP_ID: payment-service-group
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+      STRIPE_WEBHOOK_SECRET: whsec_sim_dev_secret
+    ports:
+      - "3006:3006"
+    networks:
+      - airserviz-net
+    profiles: ["services"]

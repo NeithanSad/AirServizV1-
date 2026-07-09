@@ -1,0 +1,243 @@
+/* ── EventFeed.css ───────────────────────────────────────────────────────── */
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.feed__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem 0.875rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.feed__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.feed__status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.feed__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.feed__dot--connected    { background: #16a34a; animation: pulse-green 2s infinite; }
+.feed__dot--connecting   { background: #f59e0b; animation: pulse-yellow 1s infinite; }
+.feed__dot--disconnected { background: #9ca3af; }
+.feed__dot--error        { background: var(--color-error); }
+
+@keyframes pulse-green {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+@keyframes pulse-yellow {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+.feed__status-text--connected    { color: #16a34a; }
+.feed__status-text--connecting   { color: #b45309; }
+.feed__status-text--disconnected { color: #6b7280; }
+.feed__status-text--error        { color: var(--color-error); }
+
+.feed__count {
+  font-size: 0.75rem;
+  background: var(--color-brand-light);
+  color: var(--color-brand-dark);
+  border-radius: 12px;
+  padding: 0.1rem 0.55rem;
+  font-weight: 600;
+}
+
+.feed__clear {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.feed__clear:hover { background: var(--color-bg); color: var(--color-error); }
+
+/* ── Body ────────────────────────────────────────────────────────────────── */
+.feed__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.feed__empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  padding: 2rem;
+  text-align: center;
+}
+.feed__empty-icon { font-size: 2rem; }
+
+/* ── Event Card ──────────────────────────────────────────────────────────── */
+.event-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.875rem 1rem;
+  transition: border-color 0.15s;
+  animation: slide-in 0.25s ease-out;
+}
+.event-card:hover { border-color: var(--color-brand); }
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Card top row ───────────────────────────────────────────────────────── */
+.event-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.event-card__event-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--color-brand-light);
+  color: var(--color-brand-dark);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  letter-spacing: 0.03em;
+}
+
+.event-card__time {
+  font-size: 0.73rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ── Consumer row ───────────────────────────────────────────────────────── */
+.event-card__consumer {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.625rem;
+  font-size: 0.8rem;
+}
+
+.event-card__consumer-label { color: var(--color-text-muted); }
+.event-card__consumer-name  {
+  font-weight: 600;
+  color: var(--color-text);
+  font-family: 'Courier New', monospace;
+  background: #f0f0f0;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+.event-card__consumer-action { color: var(--color-text-muted); }
+.event-card__topic {
+  font-family: 'Courier New', monospace;
+  color: var(--color-brand);
+  font-weight: 600;
+}
+
+/* ── Details grid ───────────────────────────────────────────────────────── */
+.event-card__details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem 1rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.6rem;
+}
+
+.event-card__detail-key {
+  color: var(--color-text-muted);
+}
+.event-card__detail-val {
+  font-weight: 500;
+  color: var(--color-text);
+  font-family: 'Courier New', monospace;
+  font-size: 0.76rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Footer row ─────────────────────────────────────────────────────────── */
+.event-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.event-card__status-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+}
+.status--PENDING    { background: #fef3c7; color: #92400e; }
+.status--CONFIRMED  { background: #d1fae5; color: #065f46; }
+.status--IN_PROGRESS{ background: #dbeafe; color: #1e40af; }
+.status--COMPLETED  { background: #dcfce7; color: #166534; }
+.status--CANCELLED  { background: #fee2e2; color: #991b1b; }
+.status--RESCHEDULE_PROPOSED { background: #ffedd5; color: #9a3412; }
+.status--PAID       { background: #dcfce7; color: #166534; }
+.status--FAILED     { background: #fee2e2; color: #991b1b; }
+
+.event-card__perf {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.event-card__perf span { color: var(--color-text); font-weight: 600; }
+
+/* ── Kafka meta ─────────────────────────────────────────────────────────── */
+.event-card__kafka-meta {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-top: 0.25rem;
+}

@@ -1,0 +1,79 @@
+/* ── AirServiz Design Tokens ───────────────────────────────────────────────── */
+:root {
+  --color-brand:        #E8532A;   /* reddish-orange primary */
+  --color-brand-dark:   #C44218;   /* hover / pressed */
+  --color-brand-light:  #FDE8E0;   /* tint / backgrounds */
+  --color-bg:           #F4F4F4;   /* page background – light grey */
+  --color-surface:      #FFFFFF;
+  --color-border:       #E0E0E0;
+  --color-text:         #1A1A2E;
+  --color-text-muted:   #6B7280;
+  --color-success:      #16A34A;
+  --color-error:        #DC2626;
+  --radius:             10px;
+  --shadow:             0 2px 12px rgba(0,0,0,0.08);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100dvh;
+}
+
+/* ── Form primitives (shared by modal & requests) ─────────────────────────── */
+.field { display: flex; flex-direction: column; gap: 0.35rem; }
+
+.field__label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.field__input,
+.field__textarea {
+  padding: 0.6rem 0.875rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  background: var(--color-bg);
+  transition: border-color 0.15s;
+  outline: none;
+  width: 100%;
+  font-family: inherit;
+}
+.field__input:focus,
+.field__textarea:focus {
+  border-color: var(--color-brand);
+  background: var(--color-surface);
+}
+.field__textarea { resize: vertical; min-height: 80px; }
+
+.btn-submit {
+  padding: 0.75rem 1.5rem;
+  background: var(--color-brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  letter-spacing: 0.02em;
+}
+.btn-submit:hover:not(:disabled) { background: var(--color-brand-dark); }
+.btn-submit:active:not(:disabled) { transform: scale(0.98); }
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.alert {
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.alert--success { background: #dcfce7; color: var(--color-success); border: 1px solid #86efac; }
+.alert--error   { background: #fee2e2; color: var(--color-error);   border: 1px solid #fca5a5; }

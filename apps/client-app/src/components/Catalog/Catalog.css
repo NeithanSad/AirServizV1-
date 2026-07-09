@@ -1,0 +1,273 @@
+/* ── Catalog (Airbnb-style explore grid) ─────────────────────────────────── */
+
+.catalog { display: flex; flex-direction: column; gap: 1.25rem; }
+
+/* Category pills */
+.catalog__filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.catalog__pill {
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.catalog__pill:hover { border-color: var(--color-text); color: var(--color-text); }
+.catalog__pill--active {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: #fff;
+}
+
+/* Grid */
+.catalog__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem 1.25rem;
+}
+
+/* Card */
+.catalog-card {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border-radius: 14px;
+  transition: transform 0.18s ease;
+}
+.catalog-card:hover { transform: translateY(-3px); }
+
+.catalog-card__media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--color-border);
+}
+.catalog-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.catalog-card:hover .catalog-card__media img { transform: scale(1.04); }
+
+.catalog-card__placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--color-brand-light), var(--color-bg));
+}
+
+.catalog-card__chip {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.65rem;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-text);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  letter-spacing: 0.03em;
+}
+
+.catalog-card__body { display: flex; flex-direction: column; gap: 0.3rem; padding: 0 0.15rem; }
+
+.catalog-card__name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+.catalog-card__provider {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+.catalog-card__avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.catalog-card__provider-name { font-weight: 500; }
+.catalog-card__city {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: auto;
+  font-size: 0.75rem;
+}
+
+.catalog-card__desc {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.catalog-card__price { font-size: 0.9rem; margin-top: 0.15rem; }
+.catalog-card__price strong { font-size: 1rem; }
+.catalog-card__price span { color: var(--color-text-muted); font-size: 0.8rem; }
+
+/* Skeleton */
+.catalog-card--skeleton {
+  aspect-ratio: 4 / 4.6;
+  border-radius: 14px;
+  background: var(--color-surface);
+  position: relative;
+  overflow: hidden;
+}
+.catalog-card--skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.05), transparent);
+  animation: catalog-shimmer 1.4s infinite;
+}
+@keyframes catalog-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.catalog__empty,
+.catalog__error {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+.catalog__error { color: var(--color-error); }
+
+/* ── Booking modal ───────────────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
+  animation: modal-fade 0.15s ease;
+}
+@keyframes modal-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  position: relative;
+  background: var(--color-surface);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 92dvh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  animation: modal-rise 0.2s ease;
+}
+@keyframes modal-rise {
+  from { transform: translateY(14px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.modal__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: background 0.15s;
+}
+.modal__close:hover { background: #fff; }
+
+.modal__image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.modal__header { padding: 1.1rem 1.35rem 0; }
+.modal__chip { position: static; background: var(--color-bg); margin-bottom: 0.4rem; display: inline-block; }
+.modal__title { font-size: 1.15rem; font-weight: 700; margin: 0.35rem 0 0.6rem; }
+
+.modal__provider { display: flex; align-items: center; gap: 0.6rem; }
+.modal__provider img {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.modal__provider-name { display: block; font-size: 0.875rem; font-weight: 600; }
+.modal__provider-city {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.1rem 1.35rem 1.35rem;
+}
+.modal__form .field__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.modal__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+.modal__total strong { font-size: 1.15rem; color: var(--color-text); }
+
+.modal__success {
+  padding: 2.5rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+}
+.modal__success-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: var(--color-success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal__success h3 { font-size: 1.1rem; }
+.modal__success p { font-size: 0.875rem; color: var(--color-text-muted); line-height: 1.5; }
+.modal__success .btn-submit { width: 100%; margin-top: 0.5rem; }

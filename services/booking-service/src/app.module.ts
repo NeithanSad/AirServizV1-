@@ -1,0 +1,30 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { KafkaModule } from './kafka/kafka.module';
+import { OrdersModule } from './orders/orders.module';
+import { OrderEntity } from './orders/entities/order.entity';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (cfg: ConfigService) => ({
+        type: 'postgres',
+        host: cfg.get<string>('DB_HOST', 'localhost'),
+        port: cfg.get<number>('DB_PORT', 5434),
+        database: cfg.get<string>('DB_NAME', 'bookings_db'),
+        username: cfg.get<string>('DB_USER', 'bookings_admin'),
+        password: cfg.get<string>('DB_PASS'),
+        entities: [OrderEntity],
+        synchronize: true, // auto-creates tables — use migrations in production
+        ssl: false,
+      }),
+    }),
+    KafkaModule,
+    OrdersModule,
+  ],
+})
+export class AppModule {}

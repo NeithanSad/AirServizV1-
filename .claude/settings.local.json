@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Dev\\\\DisenoyArch\\\\AirServiz - Proyecto Integrador\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(find \"C:\\\\Dev\\\\DisenoyArch\\\\AirServiz - Projeto Integrador/services/notification-service\" -maxdepth 1 -name \"*.md\" -type f)",
+      "Bash(npx tsc *)",
+      "Bash(npm install *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(echo \"provider-exit=$?\")",
+      "Bash(echo \"client-exit=$?\")",
+      "Bash(echo \"payment-exit=$?\")",
+      "Bash(echo \"notif-exit=$?\")",
+      "Bash(npm run *)",
+      "Bash(echo \"build-exit=$?\")",
+      "Bash(git init *)",
+      "Bash(grep -E \"\\\\.env$|node_modules\")",
+      "Bash(git add *)",
+      "Bash(git commit --quiet -m ' *)"
+    ]
+  }
+}
