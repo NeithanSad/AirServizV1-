@@ -19,7 +19,11 @@ import { MetricsModule } from './metrics/metrics.module';
         username: cfg.get<string>('DB_USER', 'users_admin'),
         password: cfg.get<string>('DB_PASS'),
         entities: [UserEntity],
-        synchronize: true, // auto-creates tables — use migrations in production
+        // Versioned migrations replace synchronize. Compiled migrations run
+        // automatically on startup (see src/database/migrations).
+        synchronize: false,
+        migrations: [__dirname + '/database/migrations/*.js'],
+        migrationsRun: true,
         ssl: false,
       }),
     }),

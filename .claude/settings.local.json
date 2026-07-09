@@ -37,7 +37,10 @@
       "Bash(curl -s http://localhost:3999/metrics -o \"C:/Users/neith/AppData/Local/Temp/claude/C--Dev-DisenoyArch-AirServiz---Proyecto-Integrador/3cc10f4c-8443-423d-9f9d-b92d2f4e3c24/scratchpad/metrics.txt\")",
       "Bash(curl -s http://localhost:3999/notifications)",
       "Bash(curl -s http://localhost:3999/metrics -o \"C:/Users/neith/AppData/Local/Temp/claude/C--Dev-DisenoyArch-AirServiz---Proyecto-Integrador/3cc10f4c-8443-423d-9f9d-b92d2f4e3c24/scratchpad/metrics2.txt\")",
-      "Bash(curl -s http://localhost:3999/metrics -o \"C:/Users/neith/AppData/Local/Temp/claude/C--Dev-DisenoyArch-AirServiz---Proyecto-Integrador/3cc10f4c-8443-423d-9f9d-b92d2f4e3c24/scratchpad/m.txt\")"
+      "Bash(curl -s http://localhost:3999/metrics -o \"C:/Users/neith/AppData/Local/Temp/claude/C--Dev-DisenoyArch-AirServiz---Proyecto-Integrador/3cc10f4c-8443-423d-9f9d-b92d2f4e3c24/scratchpad/m.txt\")",
+      "Bash(gh run *)",
+      "Bash(DB_HOST=localhost DB_PORT=5500 DB_NAME=auth_gen DB_USER=tmp DB_PASS=tmp npm run migration:generate -- src/database/migrations/InitAuth)",
+      "Bash(DB_HOST=localhost DB_PORT=5500 DB_NAME=auth_gen DB_USER=tmp DB_PASS=tmp npm run migration:run)"
     ]
   }
 }

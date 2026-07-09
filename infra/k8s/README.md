@@ -55,6 +55,6 @@ kubectl -n airserviz get pods,svc,hpa
 
 - El **Secret** (`01-config.yaml`) usa valores demo (`change_me`). En producción
   créalo fuera de git (sealed-secrets / external-secrets) y NUNCA lo commitees.
-- Los servicios aún usan `synchronize: true` de TypeORM al arrancar (crean sus
-  tablas). Las migraciones versionadas son un paso aparte del Sprint 7.
+- Los servicios corren **migraciones TypeORM** al arrancar (`migrationsRun: true`);
+  sobre volúmenes vacíos crean el schema desde cero. Ver [docs/migrations.md](../../docs/migrations.md).
 - HPA escala por CPU al 70% (notification al 80%, max 2, por su estado en memoria).
