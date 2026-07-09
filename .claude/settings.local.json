@@ -25,7 +25,11 @@
       "Bash(echo \"compose-ok=$?\")",
       "Bash(docker run *)",
       "Bash(MSYS_NO_PATHCONV=1 docker run --rm -e KONG_DATABASE=off -v \"C:\\\\Dev\\\\DisenoyArch\\\\AirServiz - Proyecto Integrador\\\\infra\\\\kong:/kong:ro\" kong:3.6 kong config parse /kong/kong.yaml)",
-      "Bash(echo \"auth-exit=$?\")"
+      "Bash(echo \"auth-exit=$?\")",
+      "Bash(python -c \"import yaml,sys; [yaml.safe_load\\(open\\(f\\)\\) for f in ['.github/workflows/ci.yml','.github/workflows/docker-publish.yml']]; print\\('YAML OK'\\)\")",
+      "Bash(python3 -c \"import yaml,sys; [yaml.safe_load\\(open\\(f\\)\\) for f in ['.github/workflows/ci.yml','.github/workflows/docker-publish.yml']]; print\\('YAML OK'\\)\")",
+      "Bash(pwd -W)",
+      "Bash(MSYS_NO_PATHCONV=1 docker run --rm -v \"$\\(pwd -W || pwd\\):/repo\" -w /repo rhysd/actionlint:latest -color)"
     ]
   }
 }
