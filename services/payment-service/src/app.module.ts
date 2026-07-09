@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { KafkaModule } from './kafka/kafka.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PaymentEntity } from './payments/entities/payment.entity';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { PaymentEntity } from './payments/entities/payment.entity';
     }),
     KafkaModule,
     PaymentsModule,
+    MetricsModule,
   ],
 })
 export class AppModule {}

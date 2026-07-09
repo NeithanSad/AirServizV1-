@@ -1,0 +1,12 @@
+# Tells Grafana to load dashboard JSON files from the mounted folder.
+apiVersion: 1
+
+providers:
+  - name: AirServiz
+    orgId: 1
+    folder: AirServiz
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

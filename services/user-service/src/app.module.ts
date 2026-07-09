@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProfilesModule } from './profiles/profiles.module';
 import { ProfileEntity } from './profiles/entities/profile.entity';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ProfileEntity } from './profiles/entities/profile.entity';
       }),
     }),
     ProfilesModule,
+    MetricsModule,
   ],
 })
 export class AppModule {}

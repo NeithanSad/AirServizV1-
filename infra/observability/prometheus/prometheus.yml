@@ -1,0 +1,27 @@
+# Prometheus scrape config for AirServiz.
+# Targets use docker-compose service DNS names on airserviz-net; each NestJS
+# service exposes Prometheus metrics at GET /metrics (default path).
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: airserviz-services
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["auth-service:3001"]
+        labels: { service: auth-service }
+      - targets: ["booking-service:3002"]
+        labels: { service: booking-service }
+      - targets: ["notification-service:3003"]
+        labels: { service: notification-service }
+      - targets: ["catalog-service:3004"]
+        labels: { service: catalog-service }
+      - targets: ["user-service:3005"]
+        labels: { service: user-service }
+      - targets: ["payment-service:3006"]
+        labels: { service: payment-service }
