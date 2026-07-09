@@ -1,0 +1,12 @@
+# Normalize line endings: LF in the repo, auto-convert on checkout.
+# Keeps Dockerfiles/shell scripts working in Linux-based CI and containers.
+* text=auto eol=lf
+
+# Binary types Git should never touch
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
