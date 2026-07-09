@@ -1,0 +1,233 @@
+# Database-per-service: four independent Postgres instances.
+# Each is a Deployment + ClusterIP Service + PVC (1Gi, default StorageClass).
+# ─────────────────────────────────────────────────────────────────────────────
+# postgres-users  (auth-service + user-service share users_db)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-users-pvc
+  namespace: airserviz
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-users
+  namespace: airserviz
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: { app: postgres-users }
+  template:
+    metadata:
+      labels: { app: postgres-users }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports: [{ containerPort: 5432 }]
+          env:
+            - { name: POSTGRES_USER, value: users_admin }
+            - { name: POSTGRES_DB, value: users_db }
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: airserviz-secrets, key: DB_PASSWORD }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "users_admin"] }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: postgres-users-pvc }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-users
+  namespace: airserviz
+spec:
+  selector: { app: postgres-users }
+  ports: [{ port: 5432, targetPort: 5432 }]
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# postgres-bookings
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-bookings-pvc
+  namespace: airserviz
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-bookings
+  namespace: airserviz
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: { app: postgres-bookings }
+  template:
+    metadata:
+      labels: { app: postgres-bookings }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports: [{ containerPort: 5432 }]
+          env:
+            - { name: POSTGRES_USER, value: bookings_admin }
+            - { name: POSTGRES_DB, value: bookings_db }
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: airserviz-secrets, key: DB_PASSWORD }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "bookings_admin"] }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: postgres-bookings-pvc }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-bookings
+  namespace: airserviz
+spec:
+  selector: { app: postgres-bookings }
+  ports: [{ port: 5432, targetPort: 5432 }]
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# postgres-catalog
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-catalog-pvc
+  namespace: airserviz
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-catalog
+  namespace: airserviz
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: { app: postgres-catalog }
+  template:
+    metadata:
+      labels: { app: postgres-catalog }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports: [{ containerPort: 5432 }]
+          env:
+            - { name: POSTGRES_USER, value: catalog_admin }
+            - { name: POSTGRES_DB, value: catalog_db }
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: airserviz-secrets, key: DB_PASSWORD }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "catalog_admin"] }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: postgres-catalog-pvc }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-catalog
+  namespace: airserviz
+spec:
+  selector: { app: postgres-catalog }
+  ports: [{ port: 5432, targetPort: 5432 }]
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# postgres-payments
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-payments-pvc
+  namespace: airserviz
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-payments
+  namespace: airserviz
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: { app: postgres-payments }
+  template:
+    metadata:
+      labels: { app: postgres-payments }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports: [{ containerPort: 5432 }]
+          env:
+            - { name: POSTGRES_USER, value: payments_admin }
+            - { name: POSTGRES_DB, value: payments_db }
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: airserviz-secrets, key: DB_PASSWORD }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "payments_admin"] }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: postgres-payments-pvc }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-payments
+  namespace: airserviz
+spec:
+  selector: { app: postgres-payments }
+  ports: [{ port: 5432, targetPort: 5432 }]

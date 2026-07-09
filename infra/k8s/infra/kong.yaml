@@ -1,0 +1,158 @@
+# Kong API gateway (DB-less) for Kubernetes.
+#
+# The ConfigMap below embeds infra/kong/kong.yaml so `kubectl apply -f` works
+# out of the box. If you edit infra/kong/kong.yaml, regenerate this ConfigMap:
+#   kubectl create configmap kong-config -n airserviz \
+#     --from-file=kong.yaml=infra/kong/kong.yaml \
+#     --dry-run=client -o yaml | kubectl apply -f -
+#
+# In-cluster upstream hostnames (auth-service, booking-service, …) match the
+# Service names in this namespace, so the same declarative config used by
+# docker-compose works unchanged here.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-config
+  namespace: airserviz
+data:
+  kong.yaml: |
+    _format_version: "3.0"
+    _transform: true
+    services:
+      - name: auth-service
+        host: auth-service
+        port: 3001
+        protocol: http
+        path: /auth
+        routes:
+          - name: auth-route
+            paths: ["/api/auth"]
+            strip_path: true
+      - name: booking-service
+        host: booking-service
+        port: 3002
+        protocol: http
+        path: /orders
+        routes:
+          - name: booking-route
+            paths: ["/api/orders"]
+            strip_path: true
+            plugins:
+              - name: jwt
+                config:
+                  claims_to_verify: ["exp"]
+      - name: catalog-service
+        host: catalog-service
+        port: 3004
+        protocol: http
+        path: /services
+        routes:
+          - name: catalog-route
+            paths: ["/api/services"]
+            strip_path: true
+      - name: user-service
+        host: user-service
+        port: 3005
+        protocol: http
+        path: /profiles
+        routes:
+          - name: user-route
+            paths: ["/api/profiles"]
+            strip_path: true
+            plugins:
+              - name: jwt
+                config:
+                  claims_to_verify: ["exp"]
+      - name: notification-service
+        host: notification-service
+        port: 3003
+        protocol: http
+        path: /notifications
+        routes:
+          - name: notification-route
+            paths: ["/api/notifications"]
+            strip_path: true
+      - name: payment-service
+        host: payment-service
+        port: 3006
+        protocol: http
+        path: /payments
+        routes:
+          - name: payment-webhook-route
+            paths: ["/api/payments/webhook"]
+            strip_path: true
+          - name: payment-route
+            paths: ["/api/payments"]
+            strip_path: true
+            plugins:
+              - name: jwt
+                config:
+                  claims_to_verify: ["exp"]
+    consumers:
+      - username: airserviz-app
+        jwt_secrets:
+          - key: airserviz-auth
+            algorithm: HS256
+            secret: change_me_to_a_real_secret_32chars
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 60
+          hour: 1000
+          policy: local
+          limit_by: consumer
+          fault_tolerant: true
+      - name: correlation-id
+        config:
+          header_name: X-Correlation-Id
+          generator: uuid
+          echo_downstream: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong
+  namespace: airserviz
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: kong }
+  template:
+    metadata:
+      labels: { app: kong }
+    spec:
+      containers:
+        - name: kong
+          image: kong:3.6
+          env:
+            - { name: KONG_DATABASE, value: "off" }
+            - { name: KONG_DECLARATIVE_CONFIG, value: /kong/kong.yaml }
+            - { name: KONG_PROXY_ACCESS_LOG, value: /dev/stdout }
+            - { name: KONG_PROXY_ERROR_LOG, value: /dev/stderr }
+            - { name: KONG_ADMIN_LISTEN, value: "0.0.0.0:8001" }
+          ports:
+            - { containerPort: 8000 }
+            - { containerPort: 8001 }
+          volumeMounts:
+            - { name: kong-config, mountPath: /kong, readOnly: true }
+          readinessProbe:
+            exec: { command: ["kong", "health"] }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: kong-config
+          configMap: { name: kong-config }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong
+  namespace: airserviz
+spec:
+  type: NodePort
+  selector: { app: kong }
+  ports:
+    - name: proxy
+      port: 8000
+      targetPort: 8000
+      nodePort: 30080

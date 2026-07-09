@@ -1,0 +1,27 @@
+# Shared non-secret config + demo secrets.
+#
+# ⚠️  The Secret below carries the same throwaway values as docker-compose
+#     (change_me). NEVER commit real credentials — in production create this
+#     Secret out-of-band (kubectl create secret / sealed-secrets / external
+#     secrets operator) and keep it out of git.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airserviz-config
+  namespace: airserviz
+data:
+  KAFKA_BROKER: "kafka:9092"
+  KAFKAJS_NO_PARTITIONER_WARNING: "1"
+  # DB port is uniform inside the cluster (each Postgres listens on 5432)
+  DB_PORT: "5432"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: airserviz-secrets
+  namespace: airserviz
+type: Opaque
+stringData:
+  DB_PASSWORD: "change_me"
+  JWT_SECRET: "change_me_to_a_real_secret_32chars"
+  STRIPE_WEBHOOK_SECRET: "whsec_sim_dev_secret"

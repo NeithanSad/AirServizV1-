@@ -29,7 +29,8 @@
       "Bash(python -c \"import yaml,sys; [yaml.safe_load\\(open\\(f\\)\\) for f in ['.github/workflows/ci.yml','.github/workflows/docker-publish.yml']]; print\\('YAML OK'\\)\")",
       "Bash(python3 -c \"import yaml,sys; [yaml.safe_load\\(open\\(f\\)\\) for f in ['.github/workflows/ci.yml','.github/workflows/docker-publish.yml']]; print\\('YAML OK'\\)\")",
       "Bash(pwd -W)",
-      "Bash(MSYS_NO_PATHCONV=1 docker run --rm -v \"$\\(pwd -W || pwd\\):/repo\" -w /repo rhysd/actionlint:latest -color)"
+      "Bash(MSYS_NO_PATHCONV=1 docker run --rm -v \"$\\(pwd -W || pwd\\):/repo\" -w /repo rhysd/actionlint:latest -color)",
+      "Bash(MSYS_NO_PATHCONV=1 docker run --rm -v \"$\\(pwd -W || pwd\\):/repo\" -w /repo ghcr.io/yannh/kubeconform:latest -strict -summary -ignore-missing-schemas infra/k8s)"
     ]
   }
 }
