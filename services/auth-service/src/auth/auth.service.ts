@@ -15,6 +15,10 @@ import { LoginDto } from './dto/login.dto';
 
 const BCRYPT_ROUNDS = 12;
 
+// JWT issuer — must match the Kong consumer's jwt_secret `key` so the API
+// gateway can validate tokens (see infra/kong/kong.yaml).
+const JWT_ISSUER = 'airserviz-auth';
+
 export interface TokenPair {
   accessToken: string;
   refreshToken: string;
@@ -106,10 +110,14 @@ export class AuthService {
 
     const jwtPayload = { sub: user.id, email: user.email, role: user.role };
 
-    const accessToken = this.jwt.sign(jwtPayload, { secret, expiresIn: accessExpiresIn });
+    const accessToken = this.jwt.sign(jwtPayload, {
+      secret,
+      expiresIn: accessExpiresIn,
+      issuer: JWT_ISSUER, // sets the `iss` claim Kong validates against
+    });
     const refreshToken = this.jwt.sign(
       { sub: user.id },
-      { secret, expiresIn: refreshExpiresIn },
+      { secret, expiresIn: refreshExpiresIn, issuer: JWT_ISSUER },
     );
 
     // Store hashed refresh token

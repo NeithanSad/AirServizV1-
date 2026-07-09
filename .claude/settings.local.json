@@ -16,7 +16,16 @@
       "Bash(git init *)",
       "Bash(grep -E \"\\\\.env$|node_modules\")",
       "Bash(git add *)",
-      "Bash(git commit --quiet -m ' *)"
+      "Bash(git commit --quiet -m ' *)",
+      "Bash(git commit --quiet -m 'chore: add .gitattributes for consistent LF line endings *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(git checkout *)",
+      "Bash(docker compose *)",
+      "Bash(echo \"compose-ok=$?\")",
+      "Bash(docker run *)",
+      "Bash(MSYS_NO_PATHCONV=1 docker run --rm -e KONG_DATABASE=off -v \"C:\\\\Dev\\\\DisenoyArch\\\\AirServiz - Proyecto Integrador\\\\infra\\\\kong:/kong:ro\" kong:3.6 kong config parse /kong/kong.yaml)",
+      "Bash(echo \"auth-exit=$?\")"
     ]
   }
 }

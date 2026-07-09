@@ -1,0 +1,142 @@
+# =============================================================================
+# AirServiz — Kong declarative config (DB-less mode)
+#
+# Loaded via KONG_DECLARATIVE_CONFIG. No database, no Admin API writes:
+# the gateway's entire routing + security posture lives in this file.
+#
+# Routing model
+# -------------
+# Each route matches a public "/api/<x>" prefix and strips it; the upstream
+# Kong service re-adds the internal prefix the microservice actually serves.
+#   e.g.  GET /api/orders/123/status
+#         → strip "/api/orders" → "/123/status"
+#         → service.path "/orders" → upstream "/orders/123/status"
+#
+# Security
+# --------
+#  - Global rate-limiting (per-consumer / per-IP, local policy for DB-less).
+#  - JWT plugin (HS256) on protected routes. The token's `iss` claim must
+#    equal the consumer credential `key` (airserviz-auth); auth-service signs
+#    tokens with that issuer.
+#  - Public (no JWT): auth (token issuer), read-only catalog browsing, the
+#    notification SSE feed, and the payment provider webhook.
+# =============================================================================
+
+_format_version: "3.0"
+_transform: true
+
+services:
+  # ── auth-service (public — issues the tokens) ──────────────────────────────
+  - name: auth-service
+    host: auth-service
+    port: 3001
+    protocol: http
+    path: /auth
+    routes:
+      - name: auth-route
+        paths: ["/api/auth"]
+        strip_path: true
+
+  # ── booking-service (protected) ────────────────────────────────────────────
+  - name: booking-service
+    host: booking-service
+    port: 3002
+    protocol: http
+    path: /orders
+    routes:
+      - name: booking-route
+        paths: ["/api/orders"]
+        strip_path: true
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify: ["exp"]
+
+  # ── catalog-service (public browsing) ──────────────────────────────────────
+  - name: catalog-service
+    host: catalog-service
+    port: 3004
+    protocol: http
+    path: /services
+    routes:
+      - name: catalog-route
+        paths: ["/api/services"]
+        strip_path: true
+
+  # ── user-service / profiles (protected) ────────────────────────────────────
+  - name: user-service
+    host: user-service
+    port: 3005
+    protocol: http
+    path: /profiles
+    routes:
+      - name: user-route
+        paths: ["/api/profiles"]
+        strip_path: true
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify: ["exp"]
+
+  # ── notification-service (public SSE feed) ─────────────────────────────────
+  - name: notification-service
+    host: notification-service
+    port: 3003
+    protocol: http
+    path: /notifications
+    routes:
+      - name: notification-route
+        paths: ["/api/notifications"]
+        strip_path: true
+
+  # ── payment-service ────────────────────────────────────────────────────────
+  # Two routes: the provider webhook is public (external callers have no JWT);
+  # everything else under /api/payments requires a valid token. The longer,
+  # more specific webhook path is matched first by Kong.
+  - name: payment-service
+    host: payment-service
+    port: 3006
+    protocol: http
+    path: /payments
+    routes:
+      - name: payment-webhook-route
+        paths: ["/api/payments/webhook"]
+        strip_path: true
+      - name: payment-route
+        paths: ["/api/payments"]
+        strip_path: true
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify: ["exp"]
+
+# ── Consumers ────────────────────────────────────────────────────────────────
+# One demo consumer whose JWT credential validates every token minted by
+# auth-service. `key` must match the token's `iss` claim; `secret` is the same
+# HS256 secret auth-service signs with (JWT_SECRET).
+consumers:
+  - username: airserviz-app
+    jwt_secrets:
+      - key: airserviz-auth
+        algorithm: HS256
+        secret: change_me_to_a_real_secret_32chars
+
+# ── Global plugins ───────────────────────────────────────────────────────────
+plugins:
+  # Rate limit: 60 req/min, 1000 req/hour. `local` policy = per-Kong-node
+  # counters (correct for DB-less; use redis policy for multi-node prod).
+  - name: rate-limiting
+    config:
+      minute: 60
+      hour: 1000
+      policy: local
+      limit_by: consumer
+      fault_tolerant: true
+      hide_client_headers: false
+
+  # Add a correlation id to every request for tracing across services.
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-Id
+      generator: uuid
+      echo_downstream: true
