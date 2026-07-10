@@ -1,11 +1,5 @@
 version: "3.9"
 
-# =========================================================
-# AirServiz - Sprint 2
-# Servicios: API Gateway (Kong) | Bus de mensajería (Kafka)
-#            Cache (Redis) | Capa de datos (Postgres x3)
-#            auth-service | booking-service | notification-service
-# =========================================================
 
 networks:
   airserviz-net:
@@ -202,8 +196,7 @@ services:
       - airserviz-net
 
   # ---------------------------------------------------
-  # MICROSERVICIOS (placeholders - reemplazar 'build' cuando
-  # exista el Dockerfile de cada servicio)
+  # MICROSERVICIOS 
   # ---------------------------------------------------
   user-service:
     build:
