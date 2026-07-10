@@ -1,0 +1,115 @@
+# =============================================================================
+# AirServiz — Kong declarative config for LOCAL DEV (DB-less mode)
+#
+# Same routes/security as kong.yaml, but upstream hosts point to
+# `host.docker.internal` instead of Docker service names. Use this file when
+# Kong runs in Docker but the microservices run on the host via
+# `npm run start:dev` (the normal local dev workflow) — Docker DNS can't
+# resolve container names for processes that aren't containers.
+#
+# In docker-compose (full stack) or Kubernetes, use kong.yaml instead: there
+# every service is a container/pod and Docker/K8s DNS resolves the plain
+# service names directly.
+# =============================================================================
+
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: auth-service
+    host: host.docker.internal
+    port: 3001
+    protocol: http
+    path: /auth
+    routes:
+      - name: auth-route
+        paths: ["/api/auth"]
+        strip_path: true
+
+  - name: booking-service
+    host: host.docker.internal
+    port: 3002
+    protocol: http
+    path: /orders
+    routes:
+      - name: booking-route
+        paths: ["/api/orders"]
+        strip_path: true
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify: ["exp"]
+
+  - name: catalog-service
+    host: host.docker.internal
+    port: 3004
+    protocol: http
+    path: /services
+    routes:
+      - name: catalog-route
+        paths: ["/api/services"]
+        strip_path: true
+
+  - name: user-service
+    host: host.docker.internal
+    port: 3005
+    protocol: http
+    path: /profiles
+    routes:
+      - name: user-route
+        paths: ["/api/profiles"]
+        strip_path: true
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify: ["exp"]
+
+  - name: notification-service
+    host: host.docker.internal
+    port: 3003
+    protocol: http
+    path: /notifications
+    routes:
+      - name: notification-route
+        paths: ["/api/notifications"]
+        strip_path: true
+
+  - name: payment-service
+    host: host.docker.internal
+    port: 3006
+    protocol: http
+    path: /payments
+    routes:
+      - name: payment-webhook-route
+        paths: ["/api/payments/webhook"]
+        strip_path: true
+      - name: payment-route
+        paths: ["/api/payments"]
+        strip_path: true
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify: ["exp"]
+
+consumers:
+  - username: airserviz-app
+    jwt_secrets:
+      - key: airserviz-auth
+        algorithm: HS256
+        secret: change_me_to_a_real_secret_32chars
+
+plugins:
+  - name: rate-limiting
+    config:
+      minute: 60
+      hour: 1000
+      policy: local
+      limit_by: consumer
+      fault_tolerant: true
+      hide_client_headers: false
+
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-Id
+      generator: uuid
+      echo_downstream: true

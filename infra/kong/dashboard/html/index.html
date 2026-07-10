@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AirServiz — API Gateway</title>
+<style>
+  :root {
+    --brand: #E8532A;
+    --brand-dark: #C7401C;
+    --brand-light: #FDE8E0;
+    --bg: #F7F7F8;
+    --surface: #FFFFFF;
+    --border: #E5E5E8;
+    --text: #1F1F23;
+    --text-muted: #6B6B72;
+    --success: #16A34A;
+    --error: #DC2626;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .brand { display: flex; align-items: center; gap: 0.6rem; }
+  .brand-badge {
+    width: 30px; height: 30px;
+    background: var(--brand);
+    border-radius: 8px;
+  }
+  .brand h1 { font-size: 1.15rem; margin: 0; letter-spacing: -0.01em; }
+  .brand .sub {
+    font-size: 0.68rem;
+    font-weight: 700;
+    background: var(--brand-light);
+    color: var(--brand-dark);
+    padding: 0.15rem 0.55rem;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: 0.35rem;
+  }
+  .status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+  .status-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #9ca3af;
+  }
+  .status-dot.ok { background: var(--success); animation: pulse 2s infinite; }
+  .status-dot.err { background: var(--error); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  main { padding: 1.5rem 2rem 3rem; max-width: 1200px; margin: 0 auto; }
+
+  .error-banner {
+    display: none;
+    background: #FEF2F2;
+    border: 1px solid #FCA5A5;
+    color: var(--error);
+    padding: 0.9rem 1.2rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.25rem;
+    font-size: 0.9rem;
+  }
+
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+  }
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+  }
+  .summary-card .num { font-size: 1.6rem; font-weight: 700; color: var(--brand); }
+  .summary-card .label { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+  section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  section h2 {
+    font-size: 0.95rem;
+    margin: 0;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  section h2 .count {
+    font-size: 0.72rem;
+    background: var(--brand-light);
+    color: var(--brand-dark);
+    padding: 0.1rem 0.55rem;
+    border-radius: 12px;
+    font-weight: 700;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead th {
+    text-align: left;
+    padding: 0.6rem 1.25rem;
+    background: var(--bg);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  tbody td {
+    padding: 0.7rem 1.25rem;
+    border-top: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tbody tr:hover { background: var(--bg); }
+  code {
+    font-family: 'Courier New', monospace;
+    background: var(--bg);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.82rem;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 12px;
+  }
+  .badge-jwt { background: #FEF3C7; color: #92400E; }
+  .badge-public { background: #DCFCE7; color: #166534; }
+  .empty-cell { color: var(--text-muted); font-style: italic; }
+
+  footer {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    padding: 1rem;
+  }
+  footer a { color: var(--brand); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-badge"></div>
+    <h1>AirServiz</h1>
+    <span class="sub">API Gateway</span>
+  </div>
+  <div class="status">
+    <span id="status-dot" class="status-dot"></span>
+    <span id="status-text">Conectando…</span>
+  </div>
+</header>
+
+<main>
+  <div id="error-banner" class="error-banner">
+    No se pudo conectar con Kong Admin API. Verifica que el contenedor <code>kong-gateway</code> esté corriendo
+    (<code>docker compose up -d kong kong-dashboard</code>).
+  </div>
+
+  <div class="summary">
+    <div class="summary-card"><div class="num" id="sum-services">–</div><div class="label">Servicios</div></div>
+    <div class="summary-card"><div class="num" id="sum-routes">–</div><div class="label">Rutas</div></div>
+    <div class="summary-card"><div class="num" id="sum-consumers">–</div><div class="label">Consumers</div></div>
+    <div class="summary-card"><div class="num" id="sum-plugins">–</div><div class="label">Plugins globales</div></div>
+  </div>
+
+  <section>
+    <h2>Rutas <span class="count" id="routes-count">0</span></h2>
+    <table>
+      <thead>
+        <tr><th>Ruta pública</th><th>Servicio</th><th>Upstream</th><th>Auth</th></tr>
+      </thead>
+      <tbody id="routes-body"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Plugins globales <span class="count" id="plugins-count">0</span></h2>
+    <table>
+      <thead>
+        <tr><th>Plugin</th><th>Configuración</th></tr>
+      </thead>
+      <tbody id="plugins-body"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Consumers <span class="count" id="consumers-count">0</span></h2>
+    <table>
+      <thead>
+        <tr><th>Username</th><th>Credenciales JWT</th></tr>
+      </thead>
+      <tbody id="consumers-body"></tbody>
+    </table>
+  </section>
+</main>
+
+<footer>
+  Config declarativa en <a href="https://github.com/NeithanSad/AirServizV1-/blob/main/infra/kong/kong.yaml" target="_blank">infra/kong/kong.yaml</a>
+  · Actualiza cada 10s · Admin API cruda en <a href="/admin/" target="_blank">/admin/</a>
+</footer>
+
+<script>
+const REFRESH_MS = 10000;
+
+async function fetchJson(path) {
+  const res = await fetch(path);
+  if (!res.ok) throw new Error(`${path} → HTTP ${res.status}`);
+  return res.json();
+}
+
+function setStatus(ok) {
+  const dot = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  const banner = document.getElementById('error-banner');
+  if (ok) {
+    dot.className = 'status-dot ok';
+    text.textContent = 'Kong activo';
+    banner.style.display = 'none';
+  } else {
+    dot.className = 'status-dot err';
+    text.textContent = 'Desconectado';
+    banner.style.display = 'block';
+  }
+}
+
+function renderRoutes(routes, services, plugins) {
+  const byServiceId = new Map(services.map(s => [s.id, s]));
+  // route-level JWT plugin lookup
+  const jwtRouteIds = new Set(
+    plugins.filter(p => p.name === 'jwt' && p.route).map(p => p.route.id)
+  );
+
+  const tbody = document.getElementById('routes-body');
+  tbody.innerHTML = '';
+  routes
+    .slice()
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+    .forEach(route => {
+      const svc = route.service ? byServiceId.get(route.service.id) : null;
+      const paths = (route.paths || []).join(', ');
+      const upstream = svc ? `${svc.host}:${svc.port}${svc.path || ''}` : '—';
+      const isProtected = jwtRouteIds.has(route.id);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><code>${paths || '—'}</code></td>
+        <td>${svc ? svc.name : '<span class="empty-cell">sin servicio</span>'}</td>
+        <td><code>${upstream}</code></td>
+        <td><span class="badge ${isProtected ? 'badge-jwt' : 'badge-public'}">${isProtected ? 'JWT' : 'Público'}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  document.getElementById('routes-count').textContent = routes.length;
+  document.getElementById('sum-routes').textContent = routes.length;
+  document.getElementById('sum-services').textContent = services.length;
+}
+
+function renderPlugins(plugins) {
+  const globalPlugins = plugins.filter(p => !p.route && !p.service && !p.consumer);
+  const tbody = document.getElementById('plugins-body');
+  tbody.innerHTML = '';
+  globalPlugins.forEach(p => {
+    const cfg = Object.entries(p.config || {})
+      .filter(([, v]) => v !== null && v !== undefined && v !== false)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(', ');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><code>${p.name}</code></td><td>${cfg || '<span class="empty-cell">sin config</span>'}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('plugins-count').textContent = globalPlugins.length;
+  document.getElementById('sum-plugins').textContent = globalPlugins.length;
+}
+
+function renderConsumers(consumers, jwtCreds) {
+  const credsByConsumer = new Map();
+  jwtCreds.forEach(c => {
+    const list = credsByConsumer.get(c.consumer.id) || [];
+    list.push(c.key);
+    credsByConsumer.set(c.consumer.id, list);
+  });
+
+  const tbody = document.getElementById('consumers-body');
+  tbody.innerHTML = '';
+  consumers.forEach(c => {
+    const keys = (credsByConsumer.get(c.id) || []).join(', ');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${c.username}</td><td>${keys ? `<code>${keys}</code>` : '<span class="empty-cell">sin credenciales</span>'}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('consumers-count').textContent = consumers.length;
+  document.getElementById('sum-consumers').textContent = consumers.length;
+}
+
+async function loadAll() {
+  try {
+    const [servicesRes, routesRes, pluginsRes, consumersRes, jwtRes] = await Promise.all([
+      fetchJson('/admin/services?size=100'),
+      fetchJson('/admin/routes?size=100'),
+      fetchJson('/admin/plugins?size=100'),
+      fetchJson('/admin/consumers?size=100'),
+      fetchJson('/admin/jwts?size=100').catch(() => ({ data: [] })), // fallback if empty
+    ]);
+
+    renderRoutes(routesRes.data, servicesRes.data, pluginsRes.data);
+    renderPlugins(pluginsRes.data);
+    renderConsumers(consumersRes.data, jwtRes.data);
+    setStatus(true);
+  } catch (err) {
+    console.error(err);
+    setStatus(false);
+  }
+}
+
+loadAll();
+setInterval(loadAll, REFRESH_MS);
+</script>
+
+</body>
+</html>
