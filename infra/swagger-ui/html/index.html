@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AirServiz — API Docs</title>
+<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+<style>
+  :root { --brand: #E8532A; --brand-dark: #C7401C; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header {
+    background: #fff;
+    border-bottom: 1px solid #E5E5E8;
+    padding: 0.9rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  header .badge { width: 26px; height: 26px; background: var(--brand); border-radius: 7px; }
+  header h1 { font-size: 1.05rem; margin: 0; letter-spacing: -0.01em; }
+  header .sub {
+    font-size: 0.65rem; font-weight: 700; background: #FDE8E0; color: var(--brand-dark);
+    padding: 0.15rem 0.5rem; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  /* Keep the topbar (it hosts the spec-switcher dropdown) but hide Swagger's
+     own logo/wordmark, which would duplicate our header above it. */
+  .swagger-ui .topbar { background: #fff; border-bottom: 1px solid #E5E5E8; padding: 0.5rem 0; }
+  .swagger-ui .topbar .link { display: none; }
+  .swagger-ui .topbar .download-url-wrapper .select-label { color: #1F1F23; }
+  .swagger-ui .topbar .download-url-wrapper select {
+    border-color: var(--brand);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge"></div>
+  <h1>AirServiz</h1>
+  <span class="sub">API Docs</span>
+</header>
+
+<div id="swagger-ui"></div>
+
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+<script>
+  window.onload = () => {
+    window.ui = SwaggerUIBundle({
+      urls: [
+        { url: "/specs/auth-json",         name: "auth-service          :3001" },
+        { url: "/specs/booking-json",      name: "booking-service       :3002" },
+        { url: "/specs/notification-json", name: "notification-service  :3003" },
+        { url: "/specs/catalog-json",      name: "catalog-service       :3004" },
+        { url: "/specs/user-json",         name: "user-service          :3005" },
+        { url: "/specs/payment-json",      name: "payment-service       :3006" },
+      ],
+      "urls.primaryName": "auth-service          :3001",
+      dom_id: "#swagger-ui",
+      presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+      layout: "StandaloneLayout",
+      deepLinking: true,
+    });
+  };
+</script>
+
+</body>
+</html>

@@ -74,6 +74,22 @@ services:
     networks:
       - airserviz-net
 
+  # Unified Swagger UI: one page, dropdown to switch between the 6 services'
+  # OpenAPI specs. Each service still serves its own /api/docs — this just
+  # aggregates them so you don't need 6 browser tabs. See infra/swagger-ui/.
+  swagger-ui:
+    image: nginx:1.27-alpine
+    container_name: airserviz-swagger-ui
+    volumes:
+      - ../swagger-ui/html:/usr/share/nginx/html:ro
+      - ../swagger-ui/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8089:80"
+    networks:
+      - airserviz-net
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Linux Docker fallback
+
   # ---------------------------------------------------
   # BUS DE MENSAJERÍA - Kafka + Zookeeper
   # ---------------------------------------------------
