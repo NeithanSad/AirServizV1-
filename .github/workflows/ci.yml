@@ -45,6 +45,8 @@ jobs:
               - 'apps/client-app/**'
             provider-app:
               - 'apps/provider-app/**'
+            admin-dashboard:
+              - 'apps/admin-dashboard/**'
 
   # ── 2. Build/test only the changed packages (dynamic matrix) ────────────────
   build:

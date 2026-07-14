@@ -29,6 +29,7 @@ jobs:
             payment-service: ['services/payment-service/**', 'libs/**']
             client-app: ['apps/client-app/**']
             provider-app: ['apps/provider-app/**']
+            admin-dashboard: ['apps/admin-dashboard/**']
 
   publish:
     needs: changes

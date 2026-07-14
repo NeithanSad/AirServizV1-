@@ -35,6 +35,7 @@ docker compose up -d postgres-users postgres-bookings postgres-catalog postgres-
 | Grafana | http://localhost:3000 |
 | Prometheus | http://localhost:9090 |
 | client-app / provider-app | http://localhost:5173 / :5174 (`npm run dev` en cada `apps/*`) |
+| admin-dashboard (requiere rol ADMIN) | http://localhost:5175 |
 
 Ver docs/adr/ para decisiones de arquitectura registradas.
 Ver docs/migrations.md para el flujo de migraciones TypeORM.
