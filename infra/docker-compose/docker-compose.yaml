@@ -271,6 +271,7 @@ services:
     container_name: catalog-service
     depends_on:
       - postgres-catalog
+      - redis
     environment:
       PORT: 3004
       DB_HOST: postgres-catalog
@@ -278,6 +279,8 @@ services:
       DB_NAME: catalog_db
       DB_USER: catalog_admin
       DB_PASS: change_me
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
       - "3004:3004"
     networks:
