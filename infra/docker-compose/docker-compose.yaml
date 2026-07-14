@@ -20,6 +20,7 @@ volumes:
   postgres-payments-data:
   redis-data:
   grafana-data:
+  es-data:
 
 services:
 
@@ -170,6 +171,60 @@ services:
       - airserviz-net
 
   # ---------------------------------------------------
+  # LOGS CENTRALIZADOS - Stack ELK
+  # Los servicios envían logs JSON (pino) → Logstash TCP :5000
+  # → Elasticsearch → Kibana (http://localhost:5601)
+  # ---------------------------------------------------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.1
+    container_name: airserviz-elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"   # dev only — no auth
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - airserviz-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.14.1
+    container_name: airserviz-logstash
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      LS_JAVA_OPTS: "-Xms256m -Xmx256m"
+      # pipeline única definida en ./pipeline — sin config extra
+      XPACK_MONITORING_ENABLED: "false"
+    volumes:
+      - ../observability/logstash/pipeline:/usr/share/logstash/pipeline:ro
+    ports:
+      - "5000:5000"   # entrada TCP json_lines (pino-socket)
+    networks:
+      - airserviz-net
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.14.1
+    container_name: airserviz-kibana
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - airserviz-net
+
+  # ---------------------------------------------------
   # CACHE - Redis
   # ---------------------------------------------------
   redis:
@@ -259,6 +314,7 @@ services:
       DB_NAME: users_db
       DB_USER: users_admin
       DB_PASS: change_me
+      LOG_TCP_HOST: logstash
     ports:
       - "3005:3005"
     networks:
@@ -279,6 +335,7 @@ services:
       DB_NAME: catalog_db
       DB_USER: catalog_admin
       DB_PASS: change_me
+      LOG_TCP_HOST: logstash
       REDIS_HOST: redis
       REDIS_PORT: 6379
     ports:
@@ -301,6 +358,7 @@ services:
       DB_NAME: bookings_db
       DB_USER: bookings_admin
       DB_PASS: change_me
+      LOG_TCP_HOST: logstash
       KAFKA_BROKER: kafka:9092
       KAFKAJS_NO_PARTITIONER_WARNING: "1"
       REDIS_HOST: redis
@@ -323,6 +381,7 @@ services:
       DB_NAME: users_db
       DB_USER: users_admin
       DB_PASS: change_me
+      LOG_TCP_HOST: logstash
       JWT_SECRET: change_me_to_a_real_secret_32chars
       JWT_ACCESS_EXPIRES: 15m
       JWT_REFRESH_EXPIRES: 7d
@@ -342,6 +401,7 @@ services:
       PORT: 3003
       KAFKA_BROKER: kafka:9092
       KAFKA_GROUP_ID: notification-service-group
+      LOG_TCP_HOST: logstash
       KAFKAJS_NO_PARTITIONER_WARNING: "1"
     ports:
       - "3003:3003"
@@ -363,6 +423,7 @@ services:
       DB_NAME: payments_db
       DB_USER: payments_admin
       DB_PASS: change_me
+      LOG_TCP_HOST: logstash
       KAFKA_BROKER: kafka:9092
       KAFKA_GROUP_ID: payment-service-group
       KAFKAJS_NO_PARTITIONER_WARNING: "1"

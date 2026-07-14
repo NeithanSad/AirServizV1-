@@ -34,6 +34,7 @@ docker compose up -d postgres-users postgres-bookings postgres-catalog postgres-
 | Kong — dashboard de rutas/plugins | http://localhost:8088 |
 | Grafana | http://localhost:3000 |
 | Prometheus | http://localhost:9090 |
+| Kibana — logs centralizados (índice `airserviz-logs-*`) | http://localhost:5601 |
 | client-app / provider-app | http://localhost:5173 / :5174 (`npm run dev` en cada `apps/*`) |
 | admin-dashboard (requiere rol ADMIN) | http://localhost:5175 |
 
