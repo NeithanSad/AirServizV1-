@@ -1,0 +1,14 @@
+{
+  "name": "airserviz-image-optimizer",
+  "version": "0.1.0",
+  "description": "AWS Lambda: optimiza imágenes (sharp → webp) y las sube a S3",
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "test:local": "node test-local.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.600.0",
+    "sharp": "^0.33.4"
+  }
+}
