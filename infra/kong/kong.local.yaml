@@ -50,14 +50,22 @@ services:
         paths: ["/api/services"]
         strip_path: true
 
+  # user-service: browsing (GET) is public — the client catalog lists
+  # providers before/without booking. Only mutating your own profile (PUT)
+  # requires a valid JWT (ownership is then enforced by x-actor-id).
   - name: user-service
     host: host.docker.internal
     port: 3005
     protocol: http
     path: /profiles
     routes:
-      - name: user-route
+      - name: user-route-read
         paths: ["/api/profiles"]
+        methods: ["GET"]
+        strip_path: true
+      - name: user-route-write
+        paths: ["/api/profiles"]
+        methods: ["PUT", "POST", "PATCH", "DELETE"]
         strip_path: true
         plugins:
           - name: jwt

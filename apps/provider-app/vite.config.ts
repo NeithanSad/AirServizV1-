@@ -8,11 +8,22 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
-      '/api/orders':        { target: 'http://localhost:3002', changeOrigin: true, rewrite: p => p.replace(/^\/api/, '') },
-      '/api/notifications': { target: 'http://localhost:3003', changeOrigin: true, rewrite: p => p.replace(/^\/api/, '') },
-      '/api/auth':          { target: 'http://localhost:3001', changeOrigin: true, rewrite: p => p.replace(/^\/api/, '') },
-      '/api/services':      { target: 'http://localhost:3004', changeOrigin: true, rewrite: p => p.replace(/^\/api/, '') },
-      '/api/profiles':      { target: 'http://localhost:3005', changeOrigin: true, rewrite: p => p.replace(/^\/api/, '') },
+      // Everything under /api goes through the Kong gateway (:8000), not
+      // straight to each microservice — same routing, JWT and rate-limit
+      // that production traffic gets. Kong itself strips the /api prefix
+      // per infra/kong/kong.local.yaml, so no path rewrite here.
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        ws: false,
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes) => {
+            if (proxyRes.req?.url?.startsWith('/api/notifications')) {
+              proxyRes.headers['cache-control'] = 'no-cache';
+            }
+          });
+        },
+      },
     },
   },
 });

@@ -3,10 +3,9 @@ import type { ApiResponse } from '@/types/order.types';
 import type { ServiceOffering, ProviderProfile } from '@/types/catalog.types';
 
 /**
- * Base URL: in dev, Vite proxy rewrites
- *   /api/services → http://localhost:3004 (catalog-service)
- *   /api/profiles → http://localhost:3005 (user-service)
- * In production the Kong gateway routes these paths.
+ * Base URL: Vite proxies /api to the Kong gateway (http://localhost:8000),
+ * same as production — Kong routes /api/services → catalog-service and
+ * /api/profiles → user-service.
  */
 const catalogApi = axios.create({
   baseURL: '/api',
