@@ -33,7 +33,10 @@ export class CreateServiceDto {
   @IsIn(SERVICE_CATEGORIES)
   category: ServiceCategory;
 
-  @ApiPropertyOptional({ example: 'https://picsum.photos/seed/plumbing/400/300' })
+  @ApiPropertyOptional({
+    description: 'URL de la imagen (normalmente la que devuelve POST /services/media tras optimizarla)',
+    example: 'https://airserviz-media-960422538066.s3.us-east-1.amazonaws.com/services/uuid-foto.webp',
+  })
   @IsOptional()
   @IsUrl()
   @MaxLength(500)

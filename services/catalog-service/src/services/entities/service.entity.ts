@@ -42,7 +42,8 @@ export class ServiceEntity {
   @Column({ type: 'varchar', length: 30 })
   category: ServiceCategory;
 
-  /** Free stock image URL — no upload pipeline yet */
+  /** Public S3 URL of the service image (uploaded via POST /services/media,
+   *  optimized by the image-optimizer Lambda). May also hold a plain URL. */
   @Column({ type: 'varchar', length: 500, nullable: true })
   imageUrl: string;
 

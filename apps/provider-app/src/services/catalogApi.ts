@@ -37,6 +37,33 @@ export async function deactivateService(serviceId: string): Promise<void> {
   await api.delete(`/services/${serviceId}`);
 }
 
+/**
+ * Sube la imagen del servicio desde el dispositivo: la convierte a base64,
+ * la manda a catalog-service (POST /services/media), que la optimiza con la
+ * Lambda y la sube a S3. Devuelve la URL pública para guardarla en el servicio.
+ */
+export async function uploadServiceImage(file: File): Promise<string> {
+  const imageBase64 = await fileToBase64(file);
+  const { data } = await api.post<{ data: { url: string } }>('/services/media', {
+    imageBase64,
+    filename: file.name,
+  });
+  return data.data.url;
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // readAsDataURL da "data:image/jpeg;base64,XXXX" — la Lambda quiere solo XXXX
+      const result = reader.result as string;
+      resolve(result.split(',')[1] ?? '');
+    };
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+    reader.readAsDataURL(file);
+  });
+}
+
 // ── Profile (user-service) ─────────────────────────────────────────────────
 export async function getProfile(userId: string): Promise<ProviderProfile | null> {
   try {

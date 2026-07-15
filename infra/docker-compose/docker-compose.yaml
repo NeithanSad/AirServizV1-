@@ -338,6 +338,14 @@ services:
       LOG_TCP_HOST: logstash
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      # AWS — para invocar la Lambda image-optimizer (subida de imagen de servicio).
+      # Las credenciales se interpolan desde el entorno (o desde infra/docker-compose/.env,
+      # que está en .gitignore). Si están vacías, el resto del catálogo funciona igual;
+      # solo POST /services/media devolvería 503.
+      AWS_REGION: us-east-1
+      IMAGE_OPTIMIZER_FN: airserviz-image-optimizer
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
     ports:
       - "3004:3004"
     networks:
