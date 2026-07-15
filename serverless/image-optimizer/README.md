@@ -25,35 +25,66 @@ npm install
 npm run test:local     # genera una imagen 2000px → verifica webp 1024px más liviano
 ```
 
-## Infraestructura ya creada
+## Infraestructura desplegada (AWS real — no simulada)
 
 | Recurso | Valor |
 |---|---|
 | Cuenta AWS | `960422538066` |
 | Región | `us-east-1` |
-| Bucket S3 | `airserviz-media-960422538066` |
-| Acceso | Lectura pública de objetos (`s3:GetObject`) vía bucket policy — sin listado, sin escritura anónima. `PutObject` requiere las credenciales que use la Lambda. |
+| Bucket S3 | `airserviz-media-960422538066` — lectura pública de objetos (`s3:GetObject`), listado y ACLs públicas bloqueados |
+| Repositorio ECR | `960422538066.dkr.ecr.us-east-1.amazonaws.com/airserviz-image-optimizer` |
+| Rol IAM | `arn:aws:iam::960422538066:role/airserviz-lambda-s3-role` — solo `AWSLambdaBasicExecutionRole` (logs) + `s3:PutObject` acotado a este bucket |
+| Función Lambda | `arn:aws:lambda:us-east-1:960422538066:function:airserviz-image-optimizer` — 1024MB, timeout 30s |
 
-## Desplegar (imagen de contenedor — recomendado por sharp)
+Verificado con una invocación real: PNG 8.9KB → WebP 1.5KB (83% más liviana),
+subida a S3 y accesible públicamente (`200`).
+
+## Desplegar desde cero (si se recrea en otra cuenta)
 
 sharp usa binarios nativos de libvips; empaquetarlo como **container image**
-evita incompatibilidades entre tu SO y el runtime de Lambda.
+evita incompatibilidades entre tu SO y el runtime de Lambda. **Importante:**
+Docker moderno agrega attestations (provenance/SBOM) por defecto, que
+convierten la imagen en un manifest-list — **Lambda no lo acepta**. Hay que
+desactivarlas explícitamente (`--provenance=false --sbom=false`).
 
 ```bash
-AWS_ACCOUNT=960422538066
+AWS_ACCOUNT=<tu-cuenta>
 REGION=us-east-1
-BUCKET=airserviz-media-960422538066
+BUCKET=airserviz-media-$AWS_ACCOUNT
 
-# 1. Bucket — ya creado, no repetir. Ver tabla arriba.
+# 1. Bucket (lectura pública de objetos, sin listado — ver bucket policy abajo)
+aws s3api create-bucket --bucket $BUCKET --region $REGION
+aws s3api put-public-access-block --bucket $BUCKET --public-access-block-configuration \
+  BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=false,RestrictPublicBuckets=false
+aws s3api put-bucket-policy --bucket $BUCKET --policy '{
+  "Version": "2012-10-17",
+  "Statement": [{ "Sid": "PublicReadOnly", "Effect": "Allow", "Principal": "*",
+    "Action": "s3:GetObject", "Resource": "arn:aws:s3:::'$BUCKET'/*" }]
+}'
 
-# 2. Construir y subir la imagen
+# 2. Construir y subir la imagen (SIN attestations — ver nota arriba)
 aws ecr create-repository --repository-name airserviz-image-optimizer
 aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT.dkr.ecr.$REGION.amazonaws.com
-docker build --platform linux/amd64 -t airserviz-image-optimizer .
+docker build --platform linux/amd64 --provenance=false --sbom=false -t airserviz-image-optimizer .
 docker tag airserviz-image-optimizer:latest $AWS_ACCOUNT.dkr.ecr.$REGION.amazonaws.com/airserviz-image-optimizer:latest
 docker push $AWS_ACCOUNT.dkr.ecr.$REGION.amazonaws.com/airserviz-image-optimizer:latest
 
-# 3. Crear la función (rol con permiso s3:PutObject sobre el bucket)
+# 3. Rol IAM — solo logs + PutObject en ESE bucket, nada más
+aws iam create-role --role-name airserviz-lambda-s3-role --assume-role-policy-document '{
+  "Version": "2012-10-17",
+  "Statement": [{ "Effect": "Allow", "Principal": { "Service": "lambda.amazonaws.com" },
+    "Action": "sts:AssumeRole" }]
+}'
+aws iam attach-role-policy --role-name airserviz-lambda-s3-role \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+aws iam put-role-policy --role-name airserviz-lambda-s3-role --policy-name PutObjectToMediaBucket \
+  --policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [{ "Sid": "PutOptimizedImages", "Effect": "Allow", "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::'$BUCKET'/*" }]
+  }'
+
+# 4. Crear la función (espera ~10s tras crear el rol — IAM tarda en propagar)
 aws lambda create-function \
   --function-name airserviz-image-optimizer \
   --package-type Image \
@@ -67,8 +98,9 @@ Prueba rápida desde la CLI:
 
 ```bash
 aws lambda invoke --function-name airserviz-image-optimizer \
+  --cli-binary-format raw-in-base64-out \
   --payload "{\"imageBase64\":\"$(base64 -w0 foto.jpg)\",\"filename\":\"foto.jpg\",\"folder\":\"profiles\"}" \
-  --cli-binary-format raw-in-base64-out out.json && cat out.json
+  out.json && cat out.json
 ```
 
 ## Invocarla desde user-service (o catalog-service)
