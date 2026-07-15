@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import { createHash } from 'crypto';
 import { UserEntity } from './entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -91,7 +92,7 @@ export class AuthService {
 
     if (!user?.refreshTokenHash) throw new UnauthorizedException('Session expired');
 
-    const match = await bcrypt.compare(token, user.refreshTokenHash);
+    const match = await bcrypt.compare(this.digestToken(token), user.refreshTokenHash);
     if (!match) throw new UnauthorizedException('Refresh token revoked');
 
     return this.issueTokens(user);
@@ -121,9 +122,22 @@ export class AuthService {
     );
 
     // Store hashed refresh token
-    user.refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+    user.refreshTokenHash = await bcrypt.hash(this.digestToken(refreshToken), 10);
     await this.users.save(user);
 
     return { accessToken, refreshToken, expiresIn: 900 };
+  }
+
+  /**
+   * bcrypt silently truncates its input to 72 bytes. Two JWTs for the same
+   * user share an identical prefix (header + `sub`), and the claims that
+   * actually distinguish them (`iat`/`exp`) sit past that limit — so hashing
+   * raw tokens directly with bcrypt would make bcrypt.compare() accept a
+   * STALE refresh token that only differs after byte 72, silently breaking
+   * revoke-on-relogin. Pre-hashing with SHA-256 (fixed 64 hex chars) folds
+   * the whole token into bcrypt's input window before it gets truncated.
+   */
+  private digestToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 }
