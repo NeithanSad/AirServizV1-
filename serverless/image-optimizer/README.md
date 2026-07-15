@@ -25,16 +25,26 @@ npm install
 npm run test:local     # genera una imagen 2000px → verifica webp 1024px más liviano
 ```
 
+## Infraestructura ya creada
+
+| Recurso | Valor |
+|---|---|
+| Cuenta AWS | `960422538066` |
+| Región | `us-east-1` |
+| Bucket S3 | `airserviz-media-960422538066` |
+| Acceso | Lectura pública de objetos (`s3:GetObject`) vía bucket policy — sin listado, sin escritura anónima. `PutObject` requiere las credenciales que use la Lambda. |
+
 ## Desplegar (imagen de contenedor — recomendado por sharp)
 
 sharp usa binarios nativos de libvips; empaquetarlo como **container image**
 evita incompatibilidades entre tu SO y el runtime de Lambda.
 
 ```bash
-AWS_ACCOUNT=<tu-cuenta> REGION=us-east-1
+AWS_ACCOUNT=960422538066
+REGION=us-east-1
+BUCKET=airserviz-media-960422538066
 
-# 1. Bucket destino (una sola vez)
-aws s3 mb s3://airserviz-media --region $REGION
+# 1. Bucket — ya creado, no repetir. Ver tabla arriba.
 
 # 2. Construir y subir la imagen
 aws ecr create-repository --repository-name airserviz-image-optimizer
@@ -50,7 +60,7 @@ aws lambda create-function \
   --code ImageUri=$AWS_ACCOUNT.dkr.ecr.$REGION.amazonaws.com/airserviz-image-optimizer:latest \
   --role arn:aws:iam::$AWS_ACCOUNT:role/airserviz-lambda-s3-role \
   --timeout 30 --memory-size 1024 \
-  --environment "Variables={S3_BUCKET=airserviz-media}"
+  --environment "Variables={S3_BUCKET=$BUCKET}"
 ```
 
 Prueba rápida desde la CLI:
