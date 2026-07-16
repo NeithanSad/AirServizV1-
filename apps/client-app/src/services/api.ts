@@ -2,8 +2,8 @@ import axios from 'axios';
 import type { ApiResponse, CreateOrderPayload, Order, OrderStatus } from '@/types/order.types';
 
 /**
- * Base URL: in dev, Vite proxy rewrites /api → http://localhost:3002
- * In production the Kong gateway routes /api/v1/orders → booking-service.
+ * Base URL: Vite proxies /api to the Kong gateway (http://localhost:8000),
+ * same as production — Kong routes /api/orders → booking-service.
  */
 const bookingApi = axios.create({
   baseURL: '/api',

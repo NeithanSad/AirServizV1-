@@ -1,0 +1,94 @@
+name: CI
+
+# Path-based CI: only the services whose files changed are linted/built/tested.
+# A change under libs/ or root tooling rebuilds every backend (shared contracts).
+on:
+  push:
+    branches: [main, "sprint-**"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # ── 1. Detect which services changed ────────────────────────────────────────
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.filter.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            auth-service:
+              - 'services/auth-service/**'
+              - 'libs/**'
+            booking-service:
+              - 'services/booking-service/**'
+              - 'libs/**'
+            catalog-service:
+              - 'services/catalog-service/**'
+              - 'libs/**'
+            user-service:
+              - 'services/user-service/**'
+              - 'libs/**'
+            notification-service:
+              - 'services/notification-service/**'
+              - 'libs/**'
+            payment-service:
+              - 'services/payment-service/**'
+              - 'libs/**'
+            client-app:
+              - 'apps/client-app/**'
+            provider-app:
+              - 'apps/provider-app/**'
+            admin-dashboard:
+              - 'apps/admin-dashboard/**'
+
+  # ── 2. Build/test only the changed packages (dynamic matrix) ────────────────
+  build:
+    needs: changes
+    if: needs.changes.outputs.packages != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.changes.outputs.packages) }}
+    name: build (${{ matrix.package }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: "**/package-lock.json"
+
+      - name: Resolve package directory
+        id: loc
+        run: |
+          if [ -d "services/${{ matrix.package }}" ]; then
+            echo "dir=services/${{ matrix.package }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "dir=apps/${{ matrix.package }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install
+        working-directory: ${{ steps.loc.outputs.dir }}
+        run: npm ci
+
+      - name: Lint
+        working-directory: ${{ steps.loc.outputs.dir }}
+        continue-on-error: true # lint is advisory until eslint configs are added
+        run: npm run lint --if-present
+
+      - name: Build
+        working-directory: ${{ steps.loc.outputs.dir }}
+        run: npm run build
+
+      - name: Test
+        working-directory: ${{ steps.loc.outputs.dir }}
+        run: npm run test --if-present -- --passWithNoTests

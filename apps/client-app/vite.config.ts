@@ -10,42 +10,22 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api/orders': {
-        target: 'http://localhost:3002',
+      // Everything under /api goes through the Kong gateway (:8000), not
+      // straight to each microservice — same routing, JWT and rate-limit
+      // that production traffic gets. Kong itself strips the /api prefix
+      // per infra/kong/kong.local.yaml, so no path rewrite here.
+      '/api': {
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-      '/api/notifications': {
-        target: 'http://localhost:3003',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-        // SSE requires these settings
+        // SSE (notifications) requires these settings
         ws: false,
         configure: (proxy) => {
           proxy.on('proxyRes', (proxyRes) => {
-            proxyRes.headers['cache-control'] = 'no-cache';
+            if (proxyRes.req?.url?.startsWith('/api/notifications')) {
+              proxyRes.headers['cache-control'] = 'no-cache';
+            }
           });
         },
-      },
-      '/api/auth': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-      '/api/services': {
-        target: 'http://localhost:3004',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-      '/api/profiles': {
-        target: 'http://localhost:3005',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-      '/api/payments': {
-        target: 'http://localhost:3006',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },

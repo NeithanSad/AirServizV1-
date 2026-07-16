@@ -1,13 +1,18 @@
 import { Module } from '@nestjs/common';
+import { LoggerModule } from 'nestjs-pino';
+import { buildPinoParams } from './logging/pino.config';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { KafkaModule } from './kafka/kafka.module';
 import { OrdersModule } from './orders/orders.module';
 import { OrderEntity } from './orders/entities/order.entity';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    // Logging estructurado (pino) — consola + Logstash/ELK si LOG_TCP_HOST
+    LoggerModule.forRoot(buildPinoParams('booking-service')),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -19,12 +24,16 @@ import { OrderEntity } from './orders/entities/order.entity';
         username: cfg.get<string>('DB_USER', 'bookings_admin'),
         password: cfg.get<string>('DB_PASS'),
         entities: [OrderEntity],
-        synchronize: true, // auto-creates tables — use migrations in production
+        // Versioned migrations replace synchronize (run on startup).
+        synchronize: false,
+        migrations: [__dirname + '/database/migrations/*.js'],
+        migrationsRun: true,
         ssl: false,
       }),
     }),
     KafkaModule,
     OrdersModule,
+    MetricsModule,
   ],
 })
 export class AppModule {}

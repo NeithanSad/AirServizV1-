@@ -1,0 +1,59 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="contexto" name="Contexto">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1250" pageHeight="760" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=18;fontStyle=1;" value="AirServiz — Diagrama de contexto (C4 · nivel 1)" vertex="1">
+          <mxGeometry height="30" width="700" x="60" y="15" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#666666;" value="La vista más alejada del modelo C4: el sistema como caja negra, quién lo usa y con qué sistemas externos habla · flecha sólida = interacción real, punteada = prevista (no implementada)" vertex="1">
+          <mxGeometry height="20" width="1150" x="60" y="45" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p_cliente" parent="1" style="rounded=1;html=1;fillColor=#08427b;fontColor=#ffffff;strokeColor=#052e56;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=8;fontSize=11;" value="&lt;b&gt;Cliente&lt;/b&gt;&lt;br&gt;[Persona]&lt;br&gt;&lt;br&gt;Solicitante: busca servicios en el catálogo y agenda su atención" vertex="1">
+          <mxGeometry height="110" width="230" x="90" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="p_proveedor" parent="1" style="rounded=1;html=1;fillColor=#08427b;fontColor=#ffffff;strokeColor=#052e56;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=8;fontSize=11;" value="&lt;b&gt;Proveedor&lt;/b&gt;&lt;br&gt;[Persona]&lt;br&gt;&lt;br&gt;Trabajador: publica su oferta de servicios y atiende las solicitudes" vertex="1">
+          <mxGeometry height="110" width="230" x="90" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="p_admin" parent="1" style="rounded=1;html=1;fillColor=#08427b;fontColor=#ffffff;strokeColor=#052e56;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=8;fontSize=11;" value="&lt;b&gt;Administrador&lt;/b&gt;&lt;br&gt;[Persona]&lt;br&gt;&lt;br&gt;Supervisa las órdenes y el volumen del marketplace (rol ADMIN)" vertex="1">
+          <mxGeometry height="110" width="230" x="90" y="460" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sys" parent="1" style="rounded=1;html=1;fillColor=#1168bd;fontColor=#ffffff;strokeColor=#052e56;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=10;fontSize=11;" value="&lt;b&gt;AirServiz&lt;/b&gt;&lt;br&gt;[Sistema de Software]&lt;br&gt;&lt;br&gt;Marketplace de servicios locales bajo demanda: catálogo con fotos, agendamiento con reprogramación, cobro (pasarela simulada) y notificaciones en tiempo real.&lt;br&gt;6 microservicios event-driven tras un API Gateway." vertex="1">
+          <mxGeometry height="170" width="310" x="460" y="270" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ext_aws" parent="1" style="rounded=1;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=#666666;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=8;fontSize=11;" value="&lt;b&gt;AWS (us-east-1)&lt;/b&gt;&lt;br&gt;[Sistema de Software Externo]&lt;br&gt;&lt;br&gt;Lambda optimiza las imágenes de servicios (sharp → WebP) y S3 las almacena y sirve públicamente al navegador" vertex="1">
+          <mxGeometry height="140" width="250" x="890" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="ext_stripe" parent="1" style="rounded=1;html=1;dashed=1;fillColor=#ffffff;fontColor=#666666;strokeColor=#999999;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=8;fontSize=11;" value="&lt;b&gt;Stripe&lt;/b&gt;&lt;br&gt;[Sistema Externo — PREVISTO]&lt;br&gt;&lt;br&gt;Procesador de pagos real. Hoy los cobros usan una pasarela simulada interna (interfaz PaymentGateway + webhook HMAC real)" vertex="1">
+          <mxGeometry height="140" width="250" x="890" y="450" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontStyle=2;fontColor=#666666;" value="Azul oscuro = persona · Azul = sistema propio · Gris = sistema externo real · Caja punteada = previsto, aún no conectado" vertex="1">
+          <mxGeometry height="20" width="900" x="90" y="650" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ce1" edge="1" parent="1" source="p_cliente" target="sys" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;exitX=1;exitY=0.5;entryX=0;entryY=0.2;fontSize=10;labelBackgroundColor=#ffffff;" value="Explora el catálogo, agenda con fecha, paga y sigue sus órdenes en vivo [HTTPS]">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ce2" edge="1" parent="1" source="p_proveedor" target="sys" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=10;labelBackgroundColor=#ffffff;" value="Publica servicios con foto, confirma / reprograma / cancela solicitudes [HTTPS]">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ce3" edge="1" parent="1" source="p_admin" target="sys" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;exitX=1;exitY=0.5;entryX=0;entryY=0.8;fontSize=10;labelBackgroundColor=#ffffff;" value="Consulta las transacciones (consola de solo lectura) [HTTPS]">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ce4" edge="1" parent="1" source="sys" target="ext_aws" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#666666;exitX=1;exitY=0.3;entryX=0;entryY=0.5;fontSize=10;labelBackgroundColor=#ffffff;" value="Optimiza y almacena las imágenes [AWS SDK / HTTPS]">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ce5" edge="1" parent="1" source="sys" target="ext_stripe" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;dashed=1;strokeColor=#999999;exitX=1;exitY=0.7;entryX=0;entryY=0.5;fontSize=10;labelBackgroundColor=#ffffff;" value="Diseñado para delegar los cobros (aún no conectado)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

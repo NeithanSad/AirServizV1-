@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getMyServices, createService, deactivateService } from '@/services/catalogApi';
+import {
+  getMyServices,
+  createService,
+  deactivateService,
+  uploadServiceImage,
+} from '@/services/catalogApi';
 import type { ServiceOffering, ServiceCategory, CreateServicePayload } from '@/types/catalog.types';
 import { CATEGORY_LABELS } from '@/types/catalog.types';
 import { PlusIcon, TrashIcon, XIcon } from '@/components/Icons';
@@ -22,7 +27,33 @@ export default function ServicesManager() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<CreateServicePayload>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // 4 MB
+
+  async function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('El archivo debe ser una imagen (JPG, PNG, WebP…).');
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setError('La imagen no debe superar 4 MB.');
+      return;
+    }
+    setError(null);
+    setUploading(true);
+    try {
+      const url = await uploadServiceImage(file);
+      setForm((f) => ({ ...f, imageUrl: url }));
+    } catch {
+      setError('No se pudo subir la imagen. Intenta de nuevo.');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const fetchServices = useCallback(async () => {
     if (!user) return;
@@ -140,19 +171,34 @@ export default function ServicesManager() {
             </div>
 
             <div className="sm-field sm-field--full">
-              <label htmlFor="sm-image">Imagen (URL libre)</label>
+              <label htmlFor="sm-image">Imagen del servicio</label>
               <input
                 id="sm-image"
-                type="url"
-                value={form.imageUrl}
-                onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
-                placeholder="https://picsum.photos/seed/miservicio/400/300"
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                disabled={uploading}
               />
+              {uploading && (
+                <span className="sm-upload-hint">Optimizando y subiendo imagen…</span>
+              )}
+              {form.imageUrl && !uploading && (
+                <div className="sm-image-preview">
+                  <img src={form.imageUrl} alt="Vista previa del servicio" />
+                  <button
+                    type="button"
+                    className="sm-image-remove"
+                    onClick={() => setForm((f) => ({ ...f, imageUrl: '' }))}
+                  >
+                    Quitar imagen
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          <button type="submit" className="sm-submit" disabled={saving}>
-            {saving ? 'Publicando…' : 'Publicar'}
+          <button type="submit" className="sm-submit" disabled={saving || uploading}>
+            {saving ? 'Publicando…' : uploading ? 'Subiendo imagen…' : 'Publicar'}
           </button>
         </form>
       )}

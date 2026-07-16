@@ -1,12 +1,17 @@
 import { Module } from '@nestjs/common';
+import { LoggerModule } from 'nestjs-pino';
+import { buildPinoParams } from './logging/pino.config';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UserEntity } from './auth/entities/user.entity';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    // Logging estructurado (pino) — consola + Logstash/ELK si LOG_TCP_HOST
+    LoggerModule.forRoot(buildPinoParams('auth-service')),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -18,11 +23,16 @@ import { UserEntity } from './auth/entities/user.entity';
         username: cfg.get<string>('DB_USER', 'users_admin'),
         password: cfg.get<string>('DB_PASS'),
         entities: [UserEntity],
-        synchronize: true, // auto-creates tables — use migrations in production
+        // Versioned migrations replace synchronize. Compiled migrations run
+        // automatically on startup (see src/database/migrations).
+        synchronize: false,
+        migrations: [__dirname + '/database/migrations/*.js'],
+        migrationsRun: true,
         ssl: false,
       }),
     }),
     AuthModule,
+    MetricsModule,
   ],
 })
 export class AppModule {}

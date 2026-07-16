@@ -16,7 +16,31 @@
       "Bash(git init *)",
       "Bash(grep -E \"\\\\.env$|node_modules\")",
       "Bash(git add *)",
-      "Bash(git commit --quiet -m ' *)"
+      "Bash(git commit --quiet -m ' *)",
+      "Bash(git commit --quiet -m 'chore: add .gitattributes for consistent LF line endings *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(git checkout *)",
+      "Bash(docker compose *)",
+      "Bash(echo \"compose-ok=$?\")",
+      "Bash(docker run *)",
+      "Bash(MSYS_NO_PATHCONV=1 docker run --rm -e KONG_DATABASE=off -v \"C:\\\\Dev\\\\DisenoyArch\\\\AirServiz - Proyecto Integrador\\\\infra\\\\kong:/kong:ro\" kong:3.6 kong config parse /kong/kong.yaml)",
+      "Bash(echo \"auth-exit=$?\")",
+      "Bash(python -c \"import yaml,sys; [yaml.safe_load\\(open\\(f\\)\\) for f in ['.github/workflows/ci.yml','.github/workflows/docker-publish.yml']]; print\\('YAML OK'\\)\")",
+      "Bash(python3 -c \"import yaml,sys; [yaml.safe_load\\(open\\(f\\)\\) for f in ['.github/workflows/ci.yml','.github/workflows/docker-publish.yml']]; print\\('YAML OK'\\)\")",
+      "Bash(pwd -W)",
+      "Bash(MSYS_NO_PATHCONV=1 docker run --rm -v \"$\\(pwd -W || pwd\\):/repo\" -w /repo rhysd/actionlint:latest -color)",
+      "Bash(MSYS_NO_PATHCONV=1 docker run --rm -v \"$\\(pwd -W || pwd\\):/repo\" -w /repo ghcr.io/yannh/kubeconform:latest -strict -summary -ignore-missing-schemas infra/k8s)",
+      "Bash(echo \"compose valida: $?\")",
+      "Bash(echo \"compose exit=$?\")",
+      "Read(//tmp/**)",
+      "Bash(curl -s http://localhost:3999/metrics -o \"C:/Users/neith/AppData/Local/Temp/claude/C--Dev-DisenoyArch-AirServiz---Proyecto-Integrador/3cc10f4c-8443-423d-9f9d-b92d2f4e3c24/scratchpad/metrics.txt\")",
+      "Bash(curl -s http://localhost:3999/notifications)",
+      "Bash(curl -s http://localhost:3999/metrics -o \"C:/Users/neith/AppData/Local/Temp/claude/C--Dev-DisenoyArch-AirServiz---Proyecto-Integrador/3cc10f4c-8443-423d-9f9d-b92d2f4e3c24/scratchpad/metrics2.txt\")",
+      "Bash(curl -s http://localhost:3999/metrics -o \"C:/Users/neith/AppData/Local/Temp/claude/C--Dev-DisenoyArch-AirServiz---Proyecto-Integrador/3cc10f4c-8443-423d-9f9d-b92d2f4e3c24/scratchpad/m.txt\")",
+      "Bash(gh run *)",
+      "Bash(DB_HOST=localhost DB_PORT=5500 DB_NAME=auth_gen DB_USER=tmp DB_PASS=tmp npm run migration:generate -- src/database/migrations/InitAuth)",
+      "Bash(DB_HOST=localhost DB_PORT=5500 DB_NAME=auth_gen DB_USER=tmp DB_PASS=tmp npm run migration:run)"
     ]
   }
 }

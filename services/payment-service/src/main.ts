@@ -3,13 +3,16 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { Logger as PinoLogger } from 'nestjs-pino';
 
 async function bootstrap() {
   // rawBody:true keeps the raw request buffer available for webhook
   // signature verification (Stripe-style), alongside the parsed JSON body.
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
+    bufferLogs: true,
   });
+  app.useLogger(app.get(PinoLogger));
   const logger = new Logger('Bootstrap');
 
   app.useGlobalPipes(
