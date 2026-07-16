@@ -1,0 +1,127 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="componentes" name="Componentes payment-service">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1020" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=18;fontStyle=1;" value="AirServiz — Diagrama de componentes: payment-service (C4 · nivel 3)" vertex="1">
+          <mxGeometry height="30" width="900" x="80" y="15" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#666666;" value="El microservicio más rico: REST + eventos Kafka en ambas direcciones + puerto/adaptador de pagos · flecha sólida = llamada síncrona, discontinua = evento / telemetría / implementación" vertex="1">
+          <mxGeometry height="20" width="1200" x="80" y="45" as="geometry" />
+        </mxCell>
+
+        <mxCell id="kong" parent="1" style="rounded=1;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" value="&lt;b&gt;API Gateway — Kong&lt;/b&gt; :8000&lt;br&gt;valida JWT y rate-limit antes de llegar aquí" vertex="1">
+          <mxGeometry height="50" width="300" x="460" y="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="boundary" parent="1" style="rounded=0;html=1;dashed=1;fillColor=none;strokeColor=#6c8ebf;verticalAlign=top;align=left;spacingLeft=8;spacingTop=4;fontSize=12;fontStyle=1;fontColor=#333333;" value="payment-service — NestJS 10 · Node 20 · :3006 (contenedor Docker)" vertex="1">
+          <mxGeometry height="640" width="1020" x="80" y="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="controller" parent="1" style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;PaymentsController&lt;/b&gt; [REST]&lt;br&gt;GET /payments · GET /payments/order/:orderId&lt;br&gt;POST /webhook (firma + rawBody)&lt;br&gt;POST /:id/pay (demo)" vertex="1">
+          <mxGeometry height="90" width="300" x="460" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="consumer" parent="1" style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;PaymentsConsumer&lt;/b&gt; [Kafka]&lt;br&gt;grupo payment-service-group&lt;br&gt;suscrito a order_confirmed" vertex="1">
+          <mxGeometry height="70" width="240" x="830" y="230" as="geometry" />
+        </mxCell>
+
+        <mxCell id="service" parent="1" style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;PaymentsService&lt;/b&gt; [lógica de negocio]&lt;br&gt;idempotencia: orderId único +&lt;br&gt;webhooks duplicados ignorados en estado terminal" vertex="1">
+          <mxGeometry height="80" width="300" x="460" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="repo" parent="1" style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;Repository&amp;lt;PaymentEntity&amp;gt;&lt;/b&gt;&lt;br&gt;TypeORM · migraciones al arrancar" vertex="1">
+          <mxGeometry height="70" width="240" x="120" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="producer" parent="1" style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;KafkaProducerService&lt;/b&gt;&lt;br&gt;emite payment_processed&lt;br&gt;(gzip · key = orderId)" vertex="1">
+          <mxGeometry height="70" width="240" x="830" y="380" as="geometry" />
+        </mxCell>
+
+        <mxCell id="iface" parent="1" style="rounded=1;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=10;" value="&lt;i&gt;«interfaz»&lt;/i&gt; &lt;b&gt;PaymentGateway&lt;/b&gt;&lt;br&gt;token DI: PAYMENT_GATEWAY" vertex="1">
+          <mxGeometry height="60" width="300" x="460" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="adapter" parent="1" style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="&lt;b&gt;StripeSimulatedGateway&lt;/b&gt; [adaptador]&lt;br&gt;PaymentIntents simulados · webhook firmado&lt;br&gt;HMAC t=…,v1=… · timing-safe · tolerancia 300 s" vertex="1">
+          <mxGeometry height="80" width="300" x="460" y="660" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grp_cross" parent="1" style="rounded=0;html=1;dashed=1;fillColor=none;strokeColor=#bbbbbb;verticalAlign=top;align=left;spacingLeft=6;spacingTop=2;fontSize=10;fontStyle=2;fontColor=#999999;" value="Transversales" vertex="1">
+          <mxGeometry height="190" width="240" x="120" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="metrics" parent="1" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" value="&lt;b&gt;MetricsModule&lt;/b&gt;&lt;br&gt;GET /metrics · interceptor HTTP" vertex="1">
+          <mxGeometry height="60" width="210" x="135" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="loggerm" parent="1" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" value="&lt;b&gt;LoggerModule&lt;/b&gt; (nestjs-pino)&lt;br&gt;consola + TCP a Logstash" vertex="1">
+          <mxGeometry height="60" width="210" x="135" y="675" as="geometry" />
+        </mxCell>
+
+        <mxCell id="testnote" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=9;fontStyle=2;fontColor=#666666;" value="Cubierto por payments.service.spec.ts (4 tests): webhook duplicado no re-aplica el pago ni re-emite el evento · firma alterada rechazada · order_confirmed replicado no duplica el intent" vertex="1">
+          <mxGeometry height="30" width="560" x="460" y="770" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ghost" parent="1" style="rounded=1;html=1;dashed=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=10;fontColor=#666666;" value="&lt;b&gt;Stripe real — NO implementado&lt;/b&gt;&lt;br&gt;la pasarela actual es simulada.&lt;br&gt;Para producción: implementar la interfaz&lt;br&gt;PaymentGateway y cambiar el binding DI" vertex="1">
+          <mxGeometry height="100" width="280" x="1150" y="540" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pg" parent="1" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=12;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" value="PostgreSQL&#xa;payments_db :5436&#xa;tabla payments" vertex="1">
+          <mxGeometry height="85" width="220" x="120" y="870" as="geometry" />
+        </mxCell>
+        <mxCell id="obs" parent="1" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" value="&lt;b&gt;Observabilidad&lt;/b&gt;&lt;br&gt;Prometheus (scrape /metrics) · Logstash (logs TCP :5000)" vertex="1">
+          <mxGeometry height="55" width="320" x="400" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="kafka" parent="1" style="rounded=1;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="&lt;b&gt;Apache Kafka&lt;/b&gt; — bus de eventos&lt;br&gt;order_confirmed ← booking · payment_processed → notification" vertex="1">
+          <mxGeometry height="55" width="270" x="830" y="880" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" edge="1" parent="1" source="kong" target="controller" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;fontSize=9;labelBackgroundColor=#ffffff;" value="/api/payments (Kong quita /api)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="controller" target="service" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;fontSize=9;labelBackgroundColor=#ffffff;" value="invoca">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="consumer" target="service" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;exitX=0.2;exitY=1;entryX=0.85;entryY=0;fontSize=9;labelBackgroundColor=#ffffff;" value="handleOrderConfirmed()">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="service" target="repo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;fontSize=9;labelBackgroundColor=#ffffff;" value="persiste">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="service" target="iface" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;fontSize=9;labelBackgroundColor=#ffffff;" value="usa (inyección de dependencias)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="adapter" target="iface" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;dashed=1;endArrow=block;endFill=0;exitX=0.5;exitY=0;entryX=0.5;entryY=1;fontSize=9;labelBackgroundColor=#ffffff;" value="implementa">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="service" target="producer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;labelBackgroundColor=#ffffff;" value="emitPaymentProcessed()">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="repo" target="pg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;exitX=0;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;labelBackgroundColor=#ffffff;" value="SQL (TypeORM)">
+          <mxGeometry relative="1" x="0.35" as="geometry">
+            <Array as="points">
+              <mxPoint x="95" y="425" />
+              <mxPoint x="95" y="912" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="producer" target="kafka" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;dashed=1;exitX=0.5;exitY=1;entryX=0.45;entryY=0;fontSize=9;labelBackgroundColor=#ffffff;" value="payment_processed">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="kafka" target="consumer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;dashed=1;exitX=1;exitY=0.5;entryX=1;entryY=0.5;fontSize=9;labelBackgroundColor=#ffffff;" value="order_confirmed">
+          <mxGeometry relative="1" x="-0.35" as="geometry">
+            <Array as="points">
+              <mxPoint x="1130" y="907" />
+              <mxPoint x="1130" y="265" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="grp_cross" target="obs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;dashed=1;exitX=1;exitY=0.85;entryX=0.03;entryY=0;fontSize=9;labelBackgroundColor=#ffffff;" value="métricas + logs">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="410" y="721" />
+              <mxPoint x="410" y="860" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
