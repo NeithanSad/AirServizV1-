@@ -171,7 +171,7 @@ Cada servicio lee su configuración de un `.env` (no versionado). Copia el `.env
 cd services/catalog-service && cp .env.example .env
 ```
 
-> ⚠️ Los valores de ejemplo (`change_me`) son **solo para desarrollo local**. En producción usa gestión de secretos real (sealed-secrets / external-secrets) — ver recomendaciones en la documentación técnica.
+ Los valores de ejemplo (`change_me`) son **solo para desarrollo local**. En producción usa gestión de secretos real (sealed-secrets / external-secrets) — ver recomendaciones en la documentación técnica.
 
 Para que `catalog-service` pueda invocar la Lambda necesita credenciales AWS: ver [`infra/docker-compose/.env.example`](infra/docker-compose/.env.example) y el [README de la Lambda](serverless/image-optimizer/README.md).
 
@@ -193,8 +193,8 @@ Para que `catalog-service` pueda invocar la Lambda necesita credenciales AWS: ve
 
 Somos explícitos con lo que está y lo que no:
 
-- ✅ **Implementado y verificado:** los 6 microservicios, Kong con JWT, Kafka, Redis, la Lambda desplegada en AWS real, ELK, Prometheus/Grafana, 68 tests en CI.
-- ⚠️ **La pasarela de pago es simulada** — `StripeSimulatedGateway`, detrás de la interfaz `PaymentGateway`, con verificación de firma HMAC real. Migrar a Stripe real = implementar la interfaz y cambiar un *binding* de DI; la lógica de negocio no cambia.
-- ⚠️ **`notification-service` no persiste**: el historial vive en memoria y se pierde al reiniciar.
-- ⚠️ **Secretos demo**: los `.env.example` y el Secret de K8s usan `change_me`.
-- ⚠️ **`booking-service` tiene `REDIS_HOST` configurado pero no lo usa** — variable pendiente de un caso de uso real.
+-  **Implementado y verificado:** los 6 microservicios, Kong con JWT, Kafka, Redis, la Lambda desplegada en AWS real, ELK, Prometheus/Grafana, 68 tests en CI.
+-  **La pasarela de pago es simulada** — `StripeSimulatedGateway`, detrás de la interfaz `PaymentGateway`, con verificación de firma HMAC real. Migrar a Stripe real = implementar la interfaz y cambiar un *binding* de DI; la lógica de negocio no cambia.
+-  **`notification-service` no persiste**: el historial vive en memoria y se pierde al reiniciar.
+- **Secretos demo**: los `.env.example` y el Secret de K8s usan `change_me`.
+- **`booking-service` tiene `REDIS_HOST` configurado pero no lo usa** — variable pendiente de un caso de uso real.
