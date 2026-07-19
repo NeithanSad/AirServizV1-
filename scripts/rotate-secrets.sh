@@ -17,15 +17,12 @@
 # Las contraseñas de PostgreSQL. `POSTGRES_PASSWORD` solo se aplica cuando el
 # contenedor inicializa un volumen de datos VACÍO; cambiarla en el .env con
 # volúmenes ya creados no cambia la contraseña dentro de Postgres, solo hace
-# que los servicios dejen de poder conectarse. Para rotarlas de verdad:
+# que los servicios dejen de poder conectarse.
 #
-#   docker compose --profile services down -v   # ⚠️ BORRA los datos de dev
-#   # edita POSTGRES_*_PASSWORD en infra/docker-compose/.env
-#   docker compose --profile services up -d     # las migraciones recrean el esquema
+# Se rotan con su propio script, que hace ALTER USER in-situ y no pierde datos
+# (requiere el stack levantado, por eso va aparte):
 #
-# La alternativa sin pérdida de datos es un ALTER USER dentro de cada Postgres
-# seguido de actualizar el .env. Ninguna de las dos se automatiza aquí porque
-# ambas son destructivas o requieren que el stack esté arriba.
+#   bash scripts/rotate-db-passwords.sh
 # =============================================================================
 set -euo pipefail
 

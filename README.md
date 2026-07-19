@@ -197,7 +197,14 @@ Los `.env.example` de cada servicio siguen existiendo para el flujo host (`npm r
 
 Para que `catalog-service` pueda invocar la Lambda necesita credenciales AWS: ver [`infra/docker-compose/.env.example`](infra/docker-compose/.env.example) y el [README de la Lambda](serverless/image-optimizer/README.md).
 
-> ⚠️ **Rotar las contraseñas de PostgreSQL requiere borrar los volúmenes.** `POSTGRES_PASSWORD` solo se aplica al inicializar un volumen vacío: cambiarlo con datos ya creados no rota nada, solo rompe la conexión. Hace falta `docker compose --profile services down -v` (borra los datos de desarrollo) o un `ALTER USER` en cada instancia.
+**Rotar las contraseñas de PostgreSQL** es un caso aparte, porque `POSTGRES_PASSWORD` solo se aplica al inicializar un volumen vacío: editarlo en el `.env` con datos ya creados no rota nada, solo rompe la conexión. En vez de `down -v` (que borraría los datos), usa:
+
+```bash
+bash scripts/rotate-db-passwords.sh    # ALTER USER in-situ, sin pérdida de datos
+cd infra/docker-compose && docker compose --profile services up -d --force-recreate
+```
+
+> ⚠️ **Las contraseñas de Postgres solo se exigen desde fuera del contenedor.** El `pg_hba.conf` por defecto de la imagen oficial usa `trust` para el socket local y para `127.0.0.1`, y solo aplica `scram-sha-256` a las conexiones que llegan de otro host. Dos consecuencias: comprobar una contraseña con `docker exec ... psql` **no comprueba nada** (pasa siempre), y quien tenga ejecución dentro del contenedor entra sin contraseña. Aceptable mientras las bases vivan solo en la red interna del stack; a endurecer si alguna vez se exponen.
 
 ---
 
@@ -221,5 +228,5 @@ Somos explícitos con lo que está y lo que no:
 - ⚠️ **La pasarela de pago es simulada** — `StripeSimulatedGateway`, detrás de la interfaz `PaymentGateway`, con verificación de firma HMAC real. Migrar a Stripe real = implementar la interfaz y cambiar un *binding* de DI; la lógica de negocio no cambia.
 - ⚠️ **`notification-service` no persiste**: el historial vive en memoria y se pierde al reiniciar.
 - ✅ **Secretos fuera de git**: ningún secreto está versionado. `.env` es la fuente única de verdad, el compose falla si falta alguno, y `scripts/rotate-secrets.sh` rota y propaga. El Secret de K8s es un placeholder inválido a propósito, para que un despliegue sin configurar falle en vez de arrancar débil.
-- ⚠️ **Las contraseñas de PostgreSQL siguen siendo las de desarrollo**: rotarlas exige recrear los volúmenes (ver *Configuración*).
+- ✅ **Contraseñas de PostgreSQL rotadas**: una distinta por base, de 32 bytes, rotadas in-situ sin pérdida de datos y verificadas desde la red (ver *Configuración*).
 - ⚠️ **`booking-service` tiene `REDIS_HOST` configurado pero no lo usa** — variable pendiente de un caso de uso real.
