@@ -24,7 +24,23 @@ export class StripeSimulatedGateway implements PaymentGateway {
   private readonly toleranceSec = 300; // reject signatures older than 5 min
 
   constructor(private readonly config: ConfigService) {
-    this.webhookSecret = this.config.get<string>('STRIPE_WEBHOOK_SECRET', 'whsec_sim_dev_secret');
+    const secret = this.config.get<string>('STRIPE_WEBHOOK_SECRET');
+
+    // Fail closed. This used to default to a literal that was committed to the
+    // repository: with the env var unset, the service would happily verify
+    // webhooks signed with a key anyone can read from git history, letting an
+    // attacker forge `payment_processed` and settle an order without paying.
+    // A missing signing key is a deployment error, so refuse to construct —
+    // Nest then aborts startup instead of serving in an insecure state.
+    if (!secret || secret.length < 32) {
+      throw new Error(
+        'STRIPE_WEBHOOK_SECRET is missing or shorter than 32 characters. ' +
+          'Set it in the environment (see infra/docker-compose/.env.example) — ' +
+          'payment-service will not start without a real webhook signing key.',
+      );
+    }
+
+    this.webhookSecret = secret;
   }
 
   async createPaymentIntent(params: CreateIntentParams): Promise<PaymentIntent> {
