@@ -3,6 +3,14 @@ __pycache__/
 *.pyc
 .env
 .env.local
+
+# Config declarativa de Kong ya renderizada: contiene el JWT_SECRET real.
+# Se genera desde los .template en tiempo de arranque (infra/kong/render-config.sh)
+# y normalmente vive en un volumen Docker, pero se ignora aquí por si alguien
+# la renderiza en el árbol de trabajo.
+infra/kong/kong.yaml
+infra/kong/kong.local.yaml
+
 dist/
 build/
 .DS_Store

@@ -1,10 +1,15 @@
 # Kong API gateway (DB-less) for Kubernetes.
 #
-# The ConfigMap below embeds infra/kong/kong.yaml so `kubectl apply -f` works
-# out of the box. If you edit infra/kong/kong.yaml, regenerate this ConfigMap:
+# The ConfigMap below embeds infra/kong/kong.yaml.template so `kubectl apply -f`
+# works out of the box. If you edit the template, regenerate this ConfigMap:
 #   kubectl create configmap kong-config -n airserviz \
-#     --from-file=kong.yaml=infra/kong/kong.yaml \
+#     --from-file=kong.yaml.template=infra/kong/kong.yaml.template \
 #     --dry-run=client -o yaml | kubectl apply -f -
+#
+# A ConfigMap is NOT a place for secrets, so the JWT secret is not written here:
+# the marker __JWT_SECRET__ is substituted at pod start by the initContainer of
+# the Deployment below, reading JWT_SECRET from the `airserviz-secrets` Secret.
+# Same design as docker-compose, where infra/kong/render-config.sh does the job.
 #
 # In-cluster upstream hostnames (auth-service, booking-service, …) match the
 # Service names in this namespace, so the same declarative config used by
@@ -15,7 +20,7 @@ metadata:
   name: kong-config
   namespace: airserviz
 data:
-  kong.yaml: |
+  kong.yaml.template: |
     _format_version: "3.0"
     _transform: true
     services:
@@ -98,7 +103,7 @@ data:
         jwt_secrets:
           - key: airserviz-auth
             algorithm: HS256
-            secret: change_me_to_a_real_secret_32chars
+            secret: __JWT_SECRET__
     plugins:
       - name: rate-limiting
         config:
@@ -126,6 +131,49 @@ spec:
     metadata:
       labels: { app: kong }
     spec:
+      # Renderiza la config declarativa inyectando el secreto desde el Secret.
+      # La lógica es la misma que infra/kong/render-config.sh (usado por
+      # docker-compose); se repite en línea para que `kubectl apply -f` funcione
+      # sin montar scripts externos. Si tocas una, revisa la otra.
+      initContainers:
+        - name: render-kong-config
+          image: alpine:3.20
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef: { name: airserviz-secrets, key: JWT_SECRET }
+          command: ["sh", "-euc"]
+          args:
+            - |
+              len=$(printf '%s' "$JWT_SECRET" | wc -c)
+              if [ "$len" -lt 32 ]; then
+                echo "JWT_SECRET mide $len bytes; el mínimo para HS256 es 32." >&2
+                echo "Crea el Secret fuera de git: kubectl create secret generic airserviz-secrets ..." >&2
+                exit 1
+              fi
+              # Sustitución literal con index()/substr(): ni sed ni gsub, que
+              # interpretan & y \ en el reemplazo y mutarían el secreto.
+              awk -v m='__JWT_SECRET__' '
+                BEGIN { s = ENVIRON["JWT_SECRET"] }
+                {
+                  line = $0; out = ""
+                  while ((p = index(line, m)) > 0) {
+                    out = out substr(line, 1, p - 1) s
+                    line = substr(line, p + length(m))
+                  }
+                  print out line
+                }
+              ' /templates/kong.yaml.template > /kong/kong.yaml
+              # Fail-closed: una sustitución que no ocurre dejaría a Kong
+              # validando tokens contra un secreto literal público.
+              if grep -q '__JWT_SECRET__' /kong/kong.yaml; then
+                echo "la sustitución de __JWT_SECRET__ falló; no se arranca Kong" >&2
+                exit 1
+              fi
+              echo "kong.yaml renderizado"
+          volumeMounts:
+            - { name: kong-template, mountPath: /templates, readOnly: true }
+            - { name: kong-rendered, mountPath: /kong }
       containers:
         - name: kong
           image: kong:3.6
@@ -139,14 +187,19 @@ spec:
             - { containerPort: 8000 }
             - { containerPort: 8001 }
           volumeMounts:
-            - { name: kong-config, mountPath: /kong, readOnly: true }
+            - { name: kong-rendered, mountPath: /kong, readOnly: true }
           readinessProbe:
             exec: { command: ["kong", "health"] }
             initialDelaySeconds: 15
             periodSeconds: 10
       volumes:
-        - name: kong-config
+        # Plantilla versionada (sin secretos) …
+        - name: kong-template
           configMap: { name: kong-config }
+        # … y el resultado renderizado, que sí contiene el secreto: emptyDir
+        # para que viva solo en la vida del pod y nunca se persista.
+        - name: kong-rendered
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
