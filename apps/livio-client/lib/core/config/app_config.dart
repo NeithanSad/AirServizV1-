@@ -30,4 +30,23 @@ class AppConfig {
   /// se usa para mostrar un aviso visible en la propia app y que nadie confunda
   /// una build de pruebas con una real.
   static bool get isInsecureTransport => apiBaseUrl.startsWith('http://');
+
+  /// Credenciales con las que precargar el formulario de login.
+  ///
+  /// **Vacías por defecto, a propósito.** Tener el usuario de prueba escrito en
+  /// el código sería cómodo, pero esa cadena acabaría dentro del APK publicado:
+  /// la app le aparecería a un usuario real con un formulario relleno con
+  /// credenciales ajenas, y además quedaría una contraseña versionada en git.
+  ///
+  /// Quien quiera la comodidad en desarrollo la pide explícitamente:
+  ///   flutter run --dart-define=DEV_EMAIL=... --dart-define=DEV_PASSWORD=...
+  ///
+  /// El usuario de prueba concreto está en el README, que es donde va la
+  /// documentación de arranque — no incrustado en el código.
+  static const String devEmail = String.fromEnvironment('DEV_EMAIL');
+  static const String devPassword = String.fromEnvironment('DEV_PASSWORD');
+
+  /// `true` si se pasaron credenciales de desarrollo. La UI lo usa para avisar
+  /// de que el formulario viene precargado y no es magia.
+  static bool get hasPrefilledCredentials => devEmail.isNotEmpty;
 }

@@ -12,10 +12,10 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  // Precargado con el usuario de prueba: esto es un piloto de integración, y
-  // teclear credenciales en un emulador en cada recarga en caliente sobra.
-  final _email = TextEditingController(text: 'smoke-test@airserviz.dev');
-  final _password = TextEditingController(text: 'Test1234!');
+  // Vacíos salvo que se pasen por --dart-define. Nunca escribir aquí un usuario
+  // de prueba: esa cadena acabaría dentro del APK publicado. Ver AppConfig.
+  final _email = TextEditingController(text: AppConfig.devEmail);
+  final _password = TextEditingController(text: AppConfig.devPassword);
   final _formKey = GlobalKey<FormState>();
   bool _obscure = true;
 
@@ -197,6 +197,16 @@ class _EnvironmentNotice extends StatelessWidget {
             textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.error,
+            ),
+          ),
+        ],
+        if (AppConfig.hasPrefilledCredentials) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Formulario precargado vía --dart-define',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],

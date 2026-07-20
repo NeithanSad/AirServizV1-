@@ -37,7 +37,21 @@ flutter run --dart-define=API_BASE_URL=http://localhost:8000/api
 flutter run --dart-define=API_BASE_URL=http://192.168.1.40:8000/api
 ```
 
-Usuario de prueba precargado: `smoke-test@airserviz.dev` / `Test1234!`
+### Precargar el formulario de login
+
+El formulario sale **vacío** por defecto, y es intencionado: un usuario de
+prueba escrito en el código acabaría dentro del APK publicado, apareciéndole a
+gente real con credenciales ajenas ya rellenas. Si quieres la comodidad en
+desarrollo, pídela explícitamente:
+
+```bash
+flutter run \
+  --dart-define=DEV_EMAIL=smoke-test@airserviz.dev \
+  --dart-define=DEV_PASSWORD='Test1234!'
+```
+
+La app avisa en pantalla cuando el formulario viene precargado, para que no se
+confunda con una sesión ya iniciada.
 
 ## Tests
 

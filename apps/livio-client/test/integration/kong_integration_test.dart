@@ -24,8 +24,18 @@ import 'package:livio_client/features/catalog/data/catalog_repository.dart';
 /// Se excluye de `flutter test` normal mediante la etiqueta `integration`
 /// declarada en dart_test.yaml, para que CI no falle sin backend.
 void main() {
-  const email = 'smoke-test@airserviz.dev';
-  const password = 'Test1234!';
+  // Usuario sembrado en el entorno de desarrollo local. Vive aquí y no en la
+  // app: un fichero de test nunca se empaqueta en el APK. Sobreescribible por
+  // si tu backend tiene otros datos de prueba:
+  //   --dart-define=TEST_EMAIL=... --dart-define=TEST_PASSWORD=...
+  const email = String.fromEnvironment(
+    'TEST_EMAIL',
+    defaultValue: 'smoke-test@airserviz.dev',
+  );
+  const password = String.fromEnvironment(
+    'TEST_PASSWORD',
+    defaultValue: 'Test1234!',
+  );
 
   late InMemoryTokenStorage tokens;
   late ApiClient api;

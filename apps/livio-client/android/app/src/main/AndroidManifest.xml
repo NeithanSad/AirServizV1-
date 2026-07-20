@@ -1,6 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Livio habla exclusivamente con el backend a través de Kong: sin este
+         permiso la app instala y arranca, pero TODAS las peticiones fallan.
+
+         La plantilla de Flutter solo declara INTERNET en los manifiestos de
+         `debug/` y `profile/`, porque ahí lo necesita su propio tooling para el
+         hot reload. En `main/` no lo pone, así que una build de RELEASE se
+         queda sin acceso a red y el fallo no aparece hasta que le pasas el APK
+         a alguien. Por eso se declara aquí explícitamente. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
-        android:label="livio_client"
+        android:label="Livio"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
