@@ -1,0 +1,8 @@
+# Los tests etiquetados como `integration` hablan con el backend real y por
+# tanto no pueden correr en CI sin el stack levantado. Se excluyen del
+# `flutter test` por defecto y se ejecutan a propósito:
+#
+#   flutter test test/integration --dart-define=API_BASE_URL=http://localhost:8000/api
+tags:
+  integration:
+    skip: "requiere el backend levantado — ejecuta 'flutter test test/integration'"

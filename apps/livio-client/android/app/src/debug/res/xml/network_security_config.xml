@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Excepciones de tráfico sin cifrar, solo para desarrollo.
+
+  Se listan destinos concretos en lugar de usar `cleartextTrafficPermitted=true`
+  a nivel global: así la app sigue rechazando HTTP contra cualquier otro host,
+  que es justo la protección que Android pretende dar.
+
+  Este archivo está bajo src/debug/, de modo que Gradle NO lo incluye en las
+  builds de release.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Alias del localhost del PC dentro del emulador de Android -->
+        <domain includeSubdomains="false">10.0.2.2</domain>
+
+        <!-- Móvil físico por USB con `adb reverse tcp:8000 tcp:8000` -->
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+
+    <!--
+      Para probar por WiFi contra la IP LAN del PC, añade aquí tu dirección:
+
+        <domain includeSubdomains="false">192.168.1.40</domain>
+
+      y ejecuta con:
+        flutter run --dart-define=API_BASE_URL=http://192.168.1.40:8000/api
+    -->
+</network-security-config>
