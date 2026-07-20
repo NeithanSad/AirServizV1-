@@ -1,9 +1,22 @@
-# Shared non-secret config + demo secrets.
+# Shared non-secret config + the SHAPE of the secrets (never their values).
 #
-# ⚠️  The Secret below carries the same throwaway values as docker-compose
-#     (change_me). NEVER commit real credentials — in production create this
-#     Secret out-of-band (kubectl create secret / sealed-secrets / external
-#     secrets operator) and keep it out of git.
+# ⚠️  The Secret below is a placeholder on purpose: the values are too short to
+#     be valid, so Kong's render initContainer refuses to start rather than
+#     silently accepting a weak key. Applying this file as-is will NOT bring up
+#     a working gateway — that is the intended fail-closed behaviour.
+#
+#     Create the real Secret out-of-band, never in git:
+#
+#       kubectl create secret generic airserviz-secrets -n airserviz \
+#         --from-literal=JWT_SECRET="$(openssl rand -hex 32)" \
+#         --from-literal=DB_PASSWORD="$(openssl rand -hex 32)" \
+#         --from-literal=STRIPE_WEBHOOK_SECRET="whsec_sim_$(openssl rand -hex 32)"
+#
+#     For a real cluster prefer sealed-secrets or the external-secrets operator
+#     so the manifest stays declarative without the values ever touching git.
+#
+#     JWT_SECRET must be the same value auth-service signs with; both read it
+#     from this Secret, which is what keeps them in sync.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -22,6 +35,6 @@ metadata:
   namespace: airserviz
 type: Opaque
 stringData:
-  DB_PASSWORD: "change_me"
-  JWT_SECRET: "change_me_to_a_real_secret_32chars"
-  STRIPE_WEBHOOK_SECRET: "whsec_sim_dev_secret"
+  DB_PASSWORD: "REPLACE_ME"
+  JWT_SECRET: "REPLACE_ME"
+  STRIPE_WEBHOOK_SECRET: "REPLACE_ME"

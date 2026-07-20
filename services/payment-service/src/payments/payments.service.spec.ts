@@ -58,6 +58,10 @@ const orderConfirmed = (orderId: string): OrderConfirmedEvent =>
     metadata: { timestamp: new Date().toISOString(), correlationId: 'test' },
   }) as unknown as OrderConfirmedEvent;
 
+/** Dummy signing key for tests — never a real one, but long enough to pass the
+ *  gateway's minimum-length guard. */
+const TEST_WEBHOOK_SECRET = 'whsec_test_0123456789abcdef0123456789abcdef';
+
 describe('PaymentsService — webhook idempotency', () => {
   let service: PaymentsService;
   let gateway: StripeSimulatedGateway;
@@ -73,8 +77,15 @@ describe('PaymentsService — webhook idempotency', () => {
         PaymentsService,
         { provide: getRepositoryToken(PaymentEntity), useValue: repo },
         { provide: PAYMENT_GATEWAY, useClass: StripeSimulatedGateway },
-        // StripeSimulatedGateway reads STRIPE_WEBHOOK_SECRET (falls back to default)
-        { provide: ConfigService, useValue: { get: (_k: string, d?: unknown) => d } },
+        // StripeSimulatedGateway requires a real STRIPE_WEBHOOK_SECRET (>= 32
+        // chars) and refuses to construct without one, so supply an explicit
+        // test key rather than leaning on a default.
+        {
+          provide: ConfigService,
+          useValue: {
+            get: (key: string) => (key === 'STRIPE_WEBHOOK_SECRET' ? TEST_WEBHOOK_SECRET : undefined),
+          },
+        },
         { provide: KafkaProducerService, useValue: { emit: kafkaEmit } },
       ],
     }).compile();
@@ -153,5 +164,32 @@ describe('PaymentsService — webhook idempotency', () => {
 
     expect(second.id).toBe(first.id);
     expect(repo.rows).toHaveLength(1);
+  });
+});
+
+/**
+ * The gateway used to default STRIPE_WEBHOOK_SECRET to a literal that was
+ * committed to this repository. With the env var unset, webhook signatures
+ * would then verify against a publicly-known key — enough to forge a
+ * `payment_processed` event and settle an order for free. The constructor now
+ * fails closed, and these tests keep it that way.
+ */
+describe('StripeSimulatedGateway — webhook secret is mandatory', () => {
+  const gatewayWith = (secret: unknown) =>
+    () =>
+      new StripeSimulatedGateway({
+        get: (key: string) => (key === 'STRIPE_WEBHOOK_SECRET' ? secret : undefined),
+      } as unknown as ConfigService);
+
+  it('refuses to construct when the secret is missing', () => {
+    expect(gatewayWith(undefined)).toThrow(/STRIPE_WEBHOOK_SECRET is missing/);
+  });
+
+  it('refuses to construct when the secret is too short to be a real key', () => {
+    expect(gatewayWith('whsec_sim_dev_secret')).toThrow(/shorter than 32 characters/);
+  });
+
+  it('constructs with a key of adequate length', () => {
+    expect(gatewayWith(TEST_WEBHOOK_SECRET)).not.toThrow();
   });
 });

@@ -53,8 +53,24 @@ kubectl -n airserviz get pods,svc,hpa
 
 ## Notas
 
-- El **Secret** (`01-config.yaml`) usa valores demo (`change_me`). En producción
-  créalo fuera de git (sealed-secrets / external-secrets) y NUNCA lo commitees.
+- El **Secret** (`01-config.yaml`) lleva placeholders inválidos a propósito
+  (`REPLACE_ME`): aplicarlo tal cual NO levanta un gateway funcional, porque el
+  initContainer que renderiza la config de Kong exige un `JWT_SECRET` de 32+
+  caracteres y aborta si no lo tiene. Es fail-closed deliberado. Crea el Secret
+  real fuera de git y NUNCA lo commitees:
+
+  ```bash
+  kubectl create secret generic airserviz-secrets -n airserviz \
+    --from-literal=JWT_SECRET="$(openssl rand -hex 32)" \
+    --from-literal=DB_PASSWORD="$(openssl rand -hex 32)" \
+    --from-literal=STRIPE_WEBHOOK_SECRET="whsec_sim_$(openssl rand -hex 32)"
+  ```
+
+  Para un clúster de verdad, prefiere sealed-secrets o external-secrets.
+- La config declarativa de Kong (`infra/kong/kong.yaml`) es un **ConfigMap con
+  plantilla**: el marcador `__JWT_SECRET__` lo sustituye el initContainer
+  `render-kong-config` leyendo el Secret, y el resultado vive en un `emptyDir`.
+  Un ConfigMap no es sitio para secretos.
 - Los servicios corren **migraciones TypeORM** al arrancar (`migrationsRun: true`);
   sobre volúmenes vacíos crean el schema desde cero. Ver [docs/migrations.md](../../docs/migrations.md).
 - HPA escala por CPU al 70% (notification al 80%, max 2, por su estado en memoria).

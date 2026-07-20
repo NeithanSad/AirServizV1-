@@ -122,12 +122,17 @@ services:
 # One demo consumer whose JWT credential validates every token minted by
 # auth-service. `key` must match the token's `iss` claim; `secret` is the same
 # HS256 secret auth-service signs with (JWT_SECRET).
+#
+# __JWT_SECRET__ is substituted at container start by render-config.sh, which
+# reads JWT_SECRET from infra/docker-compose/.env — the single source of truth
+# shared with auth-service. Never write a literal secret here: this file is
+# committed, the rendered kong.yaml is not.
 consumers:
   - username: airserviz-app
     jwt_secrets:
       - key: airserviz-auth
         algorithm: HS256
-        secret: change_me_to_a_real_secret_32chars
+        secret: __JWT_SECRET__
 
 # ── Global plugins ───────────────────────────────────────────────────────────
 plugins:

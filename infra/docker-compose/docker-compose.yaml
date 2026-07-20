@@ -15,16 +15,45 @@ volumes:
   redis-data:
   grafana-data:
   es-data:
+  # Kong's declarative config, rendered at boot with the real JWT secret
+  # injected. Deliberately a volume and not a bind mount: the rendered file
+  # contains a live secret and must never land in the working tree.
+  kong-config:
 
 services:
 
   # ---------------------------------------------------
+  # Renderiza la config declarativa de Kong inyectando JWT_SECRET.
+  # Contenedor efímero: corre, escribe en el volumen kong-config y termina.
+  # Si el secreto falta o es inválido, sale con error y Kong NO arranca
+  # (fail-closed) — ver infra/kong/render-config.sh.
+  # ---------------------------------------------------
+  kong-config-init:
+    image: alpine:3.20
+    container_name: kong-config-init
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?falta JWT_SECRET — ejecuta scripts/rotate-secrets.sh desde la raíz del repo}
+    volumes:
+      - ../kong:/templates:ro
+      - kong-config:/rendered
+    command: ["sh", "/templates/render-config.sh"]
+    restart: "no"
+    # Solo lee una plantilla y escribe un archivo: no tiene nada que hacer en
+    # la red. Sin esto además acabaría en la red `default`, que ningún otro
+    # servicio usa.
+    network_mode: none
+
+  # ---------------------------------------------------
   # API GATEWAY - Kong (DB-less / declarative)
-  # Rutas, JWT y rate-limit se cargan desde infra/kong/kong.yaml
+  # Rutas, JWT y rate-limit se cargan desde infra/kong/kong.yaml.template,
+  # renderizado por kong-config-init al volumen kong-config.
   # ---------------------------------------------------
   kong:
     image: kong:3.6
     container_name: kong-gateway
+    depends_on:
+      kong-config-init:
+        condition: service_completed_successfully
     environment:
       KONG_DATABASE: "off"
       # kong.local.yaml routes to host.docker.internal — matches the normal
@@ -39,7 +68,7 @@ services:
       # Admin API in read-only mode (DB-less can't persist writes anyway)
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
     volumes:
-      - ../kong:/kong:ro
+      - kong-config:/kong:ro
     extra_hosts:
       - "host.docker.internal:host-gateway" # Linux Docker fallback
     ports:
@@ -240,7 +269,7 @@ services:
     container_name: postgres-users
     environment:
       POSTGRES_USER: users_admin
-      POSTGRES_PASSWORD: change_me
+      POSTGRES_PASSWORD: ${POSTGRES_USERS_PASSWORD:?falta POSTGRES_USERS_PASSWORD en .env}
       POSTGRES_DB: users_db
     volumes:
       - postgres-users-data:/var/lib/postgresql/data
@@ -254,7 +283,7 @@ services:
     container_name: postgres-bookings
     environment:
       POSTGRES_USER: bookings_admin
-      POSTGRES_PASSWORD: change_me
+      POSTGRES_PASSWORD: ${POSTGRES_BOOKINGS_PASSWORD:?falta POSTGRES_BOOKINGS_PASSWORD en .env}
       POSTGRES_DB: bookings_db
     volumes:
       - postgres-bookings-data:/var/lib/postgresql/data
@@ -268,7 +297,7 @@ services:
     container_name: postgres-catalog
     environment:
       POSTGRES_USER: catalog_admin
-      POSTGRES_PASSWORD: change_me
+      POSTGRES_PASSWORD: ${POSTGRES_CATALOG_PASSWORD:?falta POSTGRES_CATALOG_PASSWORD en .env}
       POSTGRES_DB: catalog_db
     volumes:
       - postgres-catalog-data:/var/lib/postgresql/data
@@ -282,7 +311,7 @@ services:
     container_name: postgres-payments
     environment:
       POSTGRES_USER: payments_admin
-      POSTGRES_PASSWORD: change_me
+      POSTGRES_PASSWORD: ${POSTGRES_PAYMENTS_PASSWORD:?falta POSTGRES_PAYMENTS_PASSWORD en .env}
       POSTGRES_DB: payments_db
     volumes:
       - postgres-payments-data:/var/lib/postgresql/data
@@ -306,7 +335,7 @@ services:
       DB_PORT: 5432
       DB_NAME: users_db
       DB_USER: users_admin
-      DB_PASS: change_me
+      DB_PASS: ${POSTGRES_USERS_PASSWORD:?falta POSTGRES_USERS_PASSWORD en .env}
       LOG_TCP_HOST: logstash
     ports:
       - "3005:3005"
@@ -327,7 +356,7 @@ services:
       DB_PORT: 5432
       DB_NAME: catalog_db
       DB_USER: catalog_admin
-      DB_PASS: change_me
+      DB_PASS: ${POSTGRES_CATALOG_PASSWORD:?falta POSTGRES_CATALOG_PASSWORD en .env}
       LOG_TCP_HOST: logstash
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -358,7 +387,7 @@ services:
       DB_PORT: 5432
       DB_NAME: bookings_db
       DB_USER: bookings_admin
-      DB_PASS: change_me
+      DB_PASS: ${POSTGRES_BOOKINGS_PASSWORD:?falta POSTGRES_BOOKINGS_PASSWORD en .env}
       LOG_TCP_HOST: logstash
       KAFKA_BROKER: kafka:9092
       KAFKAJS_NO_PARTITIONER_WARNING: "1"
@@ -381,9 +410,11 @@ services:
       DB_PORT: 5432
       DB_NAME: users_db
       DB_USER: users_admin
-      DB_PASS: change_me
+      DB_PASS: ${POSTGRES_USERS_PASSWORD:?falta POSTGRES_USERS_PASSWORD en .env}
       LOG_TCP_HOST: logstash
-      JWT_SECRET: change_me_to_a_real_secret_32chars
+      # Mismo valor que consume kong-config-init: ambos leen esta variable del
+      # .env, así que Kong y auth-service no pueden desincronizarse.
+      JWT_SECRET: ${JWT_SECRET:?falta JWT_SECRET en .env}
       JWT_ACCESS_EXPIRES: 15m
       JWT_REFRESH_EXPIRES: 7d
     ports:
@@ -423,12 +454,12 @@ services:
       DB_PORT: 5432
       DB_NAME: payments_db
       DB_USER: payments_admin
-      DB_PASS: change_me
+      DB_PASS: ${POSTGRES_PAYMENTS_PASSWORD:?falta POSTGRES_PAYMENTS_PASSWORD en .env}
       LOG_TCP_HOST: logstash
       KAFKA_BROKER: kafka:9092
       KAFKA_GROUP_ID: payment-service-group
       KAFKAJS_NO_PARTITIONER_WARNING: "1"
-      STRIPE_WEBHOOK_SECRET: whsec_sim_dev_secret
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?falta STRIPE_WEBHOOK_SECRET en .env}
     ports:
       - "3006:3006"
     networks:

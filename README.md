@@ -13,9 +13,19 @@ Un cliente busca un servicio en el catálogo, lo agenda con fecha y paga; el pro
 Requisito único: **Docker Desktop**.
 
 ```bash
+# 1. Generar los secretos locales (una sola vez)
+cp infra/docker-compose/.env.example infra/docker-compose/.env
+bash scripts/rotate-secrets.sh
+
+# 2. Levantar el stack
 cd infra/docker-compose
 docker compose --profile services up -d
 ```
+
+El primer paso no es opcional: el `docker-compose.yaml` no contiene ningún
+secreto y **se niega a arrancar** si falta alguno, en vez de caer a un valor por
+defecto inseguro. `rotate-secrets.sh` los genera y los propaga a todos los
+sitios que deben compartirlos.
 
 Eso levanta **todo** (23 contenedores): los 3 frontends, Kong, los 6 microservicios, las 4 bases, Redis, Kafka y el stack de observabilidad. La primera vez tarda unos minutos construyendo imágenes.
 
@@ -165,15 +175,36 @@ Los servicios con BD corren migraciones TypeORM al arrancar (`migrationsRun: tru
 
 ## Configuración
 
-Cada servicio lee su configuración de un `.env` (no versionado). Copia el `.env.example` de al lado y rellena:
+### Secretos
+
+**Fuente única de verdad: [`infra/docker-compose/.env`](infra/docker-compose/.env.example)** (no versionado). Ahí viven `JWT_SECRET`, `STRIPE_WEBHOOK_SECRET`, las contraseñas de las 4 bases y las credenciales AWS. Ningún secreto está commiteado.
 
 ```bash
-cd services/catalog-service && cp .env.example .env
+bash scripts/rotate-secrets.sh   # genera valores nuevos y los propaga
 ```
 
- Los valores de ejemplo (`change_me`) son **solo para desarrollo local**. En producción usa gestión de secretos real (sealed-secrets / external-secrets) — ver recomendaciones en la documentación técnica.
+Tres decisiones de diseño detrás de esto:
+
+1. **Fail-closed en todas partes.** El compose usa `${VAR:?mensaje}`, así que una variable ausente **aborta el arranque** en lugar de usar un default. Igual el gateway de pagos, que se niega a construirse sin `STRIPE_WEBHOOK_SECRET`, y el renderizador de Kong, que aborta si el secreto es corto o no llegó a sustituirse.
+
+2. **Kong no puede desincronizarse de auth-service.** La config declarativa de Kong es una plantilla versionada ([`kong.yaml.template`](infra/kong/kong.yaml.template)) con el marcador `__JWT_SECRET__`; el contenedor `kong-config-init` la renderiza al arrancar leyendo el **mismo** `JWT_SECRET` que recibe auth-service. Antes el valor estaba copiado a mano en 6 archivos y cualquier rotación parcial provocaba `401` en toda la API.
+
+   > Kong 3.6 no sirve para esto de fábrica: las referencias `{vault://env/...}` aún no soportan credenciales `jwt_secrets` en modo DB-less ([Kong/kong#14775](https://github.com/Kong/kong/pull/14775)) y, peor, una referencia sin resolver degrada el secreto a cadena vacía en vez de fallar.
+
+3. **Una contraseña por base de datos**, coherente con *database-per-service*: comprometer una no da acceso a las otras tres.
+
+Los `.env.example` de cada servicio siguen existiendo para el flujo host (`npm run start:dev`) y solo contienen marcadores. En un clúster real, crea el Secret fuera de git (`kubectl create secret`, sealed-secrets o external-secrets); ver [`infra/k8s/01-config.yaml`](infra/k8s/01-config.yaml).
 
 Para que `catalog-service` pueda invocar la Lambda necesita credenciales AWS: ver [`infra/docker-compose/.env.example`](infra/docker-compose/.env.example) y el [README de la Lambda](serverless/image-optimizer/README.md).
+
+**Rotar las contraseñas de PostgreSQL** es un caso aparte, porque `POSTGRES_PASSWORD` solo se aplica al inicializar un volumen vacío: editarlo en el `.env` con datos ya creados no rota nada, solo rompe la conexión. En vez de `down -v` (que borraría los datos), usa:
+
+```bash
+bash scripts/rotate-db-passwords.sh    # ALTER USER in-situ, sin pérdida de datos
+cd infra/docker-compose && docker compose --profile services up -d --force-recreate
+```
+
+> ⚠️ **Las contraseñas de Postgres solo se exigen desde fuera del contenedor.** El `pg_hba.conf` por defecto de la imagen oficial usa `trust` para el socket local y para `127.0.0.1`, y solo aplica `scram-sha-256` a las conexiones que llegan de otro host. Dos consecuencias: comprobar una contraseña con `docker exec ... psql` **no comprueba nada** (pasa siempre), y quien tenga ejecución dentro del contenedor entra sin contraseña. Aceptable mientras las bases vivan solo en la red interna del stack; a endurecer si alguna vez se exponen.
 
 ---
 
@@ -193,8 +224,9 @@ Para que `catalog-service` pueda invocar la Lambda necesita credenciales AWS: ve
 
 Somos explícitos con lo que está y lo que no:
 
--  **Implementado y verificado:** los 6 microservicios, Kong con JWT, Kafka, Redis, la Lambda desplegada en AWS real, ELK, Prometheus/Grafana, 68 tests en CI.
--  **La pasarela de pago es simulada** — `StripeSimulatedGateway`, detrás de la interfaz `PaymentGateway`, con verificación de firma HMAC real. Migrar a Stripe real = implementar la interfaz y cambiar un *binding* de DI; la lógica de negocio no cambia.
--  **`notification-service` no persiste**: el historial vive en memoria y se pierde al reiniciar.
-- **Secretos demo**: los `.env.example` y el Secret de K8s usan `change_me`.
-- **`booking-service` tiene `REDIS_HOST` configurado pero no lo usa** — variable pendiente de un caso de uso real.
+- ✅ **Implementado y verificado:** los 6 microservicios, Kong con JWT, Kafka, Redis, la Lambda desplegada en AWS real, ELK, Prometheus/Grafana, 71 tests en CI.
+- ⚠️ **La pasarela de pago es simulada** — `StripeSimulatedGateway`, detrás de la interfaz `PaymentGateway`, con verificación de firma HMAC real. Migrar a Stripe real = implementar la interfaz y cambiar un *binding* de DI; la lógica de negocio no cambia.
+- ⚠️ **`notification-service` no persiste**: el historial vive en memoria y se pierde al reiniciar.
+- ✅ **Secretos fuera de git**: ningún secreto está versionado. `.env` es la fuente única de verdad, el compose falla si falta alguno, y `scripts/rotate-secrets.sh` rota y propaga. El Secret de K8s es un placeholder inválido a propósito, para que un despliegue sin configurar falle en vez de arrancar débil.
+- ✅ **Contraseñas de PostgreSQL rotadas**: una distinta por base, de 32 bytes, rotadas in-situ sin pérdida de datos y verificadas desde la red (ver *Configuración*).
+- ⚠️ **`booking-service` tiene `REDIS_HOST` configurado pero no lo usa** — variable pendiente de un caso de uso real.

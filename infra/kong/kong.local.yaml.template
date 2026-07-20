@@ -99,12 +99,16 @@ services:
             config:
               claims_to_verify: ["exp"]
 
+# __JWT_SECRET__ is substituted at container start by render-config.sh from
+# JWT_SECRET in infra/docker-compose/.env. In this host-dev workflow that value
+# must also match services/auth-service/.env — scripts/rotate-secrets.sh
+# writes both, so rotate with it rather than editing files by hand.
 consumers:
   - username: airserviz-app
     jwt_secrets:
       - key: airserviz-auth
         algorithm: HS256
-        secret: change_me_to_a_real_secret_32chars
+        secret: __JWT_SECRET__
 
 plugins:
   - name: rate-limiting
