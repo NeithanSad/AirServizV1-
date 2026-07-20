@@ -20,11 +20,11 @@
     </domain-config>
 
     <!--
-      Para probar por WiFi contra la IP LAN del PC, añade aquí tu dirección:
+      Para probar por WiFi contra la IP LAN del PC, añade aquí tu dirección
+      como un domain más dentro del bloque de arriba, y pásale la URL a la app
+      con la opción dart-define (ver el README).
 
-        <domain includeSubdomains="false">192.168.1.40</domain>
-
-      y ejecuta con:
-        flutter run --dart-define=API_BASE_URL=http://192.168.1.40:8000/api
+      Nota: XML no admite dos guiones seguidos dentro de un comentario, así que
+      las opciones de línea de comandos no pueden escribirse literalmente aquí.
     -->
 </network-security-config>
