@@ -7,10 +7,14 @@ import { KafkaModule } from './kafka/kafka.module';
 import { OrdersModule } from './orders/orders.module';
 import { OrderEntity } from './orders/entities/order.entity';
 import { MetricsModule } from './metrics/metrics.module';
+import { SharedAuthModule } from './shared-auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    // Verificación de identidad a partir del JWT. Global: cualquier controlador
+    // puede usar @UseGuards(JwtAuthGuard) sin importarlo de nuevo.
+    SharedAuthModule,
     // Logging estructurado (pino) — consola + Logstash/ELK si LOG_TCP_HOST
     LoggerModule.forRoot(buildPinoParams('booking-service')),
     TypeOrmModule.forRootAsync({

@@ -337,6 +337,7 @@ services:
       DB_USER: users_admin
       DB_PASS: ${POSTGRES_USERS_PASSWORD:?falta POSTGRES_USERS_PASSWORD en .env}
       LOG_TCP_HOST: logstash
+      JWT_SECRET: ${JWT_SECRET:?falta JWT_SECRET en .env}
     ports:
       - "3005:3005"
     networks:
@@ -358,6 +359,7 @@ services:
       DB_USER: catalog_admin
       DB_PASS: ${POSTGRES_CATALOG_PASSWORD:?falta POSTGRES_CATALOG_PASSWORD en .env}
       LOG_TCP_HOST: logstash
+      JWT_SECRET: ${JWT_SECRET:?falta JWT_SECRET en .env}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       # AWS — para invocar la Lambda image-optimizer (subida de imagen de servicio).
@@ -389,6 +391,10 @@ services:
       DB_USER: bookings_admin
       DB_PASS: ${POSTGRES_BOOKINGS_PASSWORD:?falta POSTGRES_BOOKINGS_PASSWORD en .env}
       LOG_TCP_HOST: logstash
+      # Verifica los JWT él mismo para derivar la identidad del usuario. Kong
+      # valida en el borde, pero un proceso dentro de la red podría llegar
+      # directo a este puerto y forjar cabeceras.
+      JWT_SECRET: ${JWT_SECRET:?falta JWT_SECRET en .env}
       KAFKA_BROKER: kafka:9092
       KAFKAJS_NO_PARTITIONER_WARNING: "1"
       REDIS_HOST: redis
@@ -434,6 +440,7 @@ services:
       KAFKA_BROKER: kafka:9092
       KAFKA_GROUP_ID: notification-service-group
       LOG_TCP_HOST: logstash
+      JWT_SECRET: ${JWT_SECRET:?falta JWT_SECRET en .env}
       KAFKAJS_NO_PARTITIONER_WARNING: "1"
     ports:
       - "3003:3003"
@@ -456,6 +463,7 @@ services:
       DB_USER: payments_admin
       DB_PASS: ${POSTGRES_PAYMENTS_PASSWORD:?falta POSTGRES_PAYMENTS_PASSWORD en .env}
       LOG_TCP_HOST: logstash
+      JWT_SECRET: ${JWT_SECRET:?falta JWT_SECRET en .env}
       KAFKA_BROKER: kafka:9092
       KAFKA_GROUP_ID: payment-service-group
       KAFKAJS_NO_PARTITIONER_WARNING: "1"

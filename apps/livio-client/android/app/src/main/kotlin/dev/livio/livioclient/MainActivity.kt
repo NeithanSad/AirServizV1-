@@ -1,4 +1,4 @@
-package dev.livio.livio_client
+package dev.livio.livioclient
 
 import io.flutter.embedding.android.FlutterActivity
 

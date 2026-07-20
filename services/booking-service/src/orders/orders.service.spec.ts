@@ -36,10 +36,26 @@ class InMemoryOrderRepo {
     return this.rows.find((r) => r.id === where.id) ?? null;
   }
 
-  async find({ where }: { where: Partial<OrderEntity> }): Promise<OrderEntity[]> {
-    return this.rows.filter((r) =>
-      Object.entries(where).every(([k, v]) => r[k as keyof OrderEntity] === v),
-    );
+  /**
+   * Reproduce la semántica de TypeORM: un `where` objeto es un AND de sus
+   * campos, y un `where` **array** es un OR entre condiciones.
+   *
+   * El array importa: `findAllForUser` lo usa para "órdenes donde soy cliente
+   * O soy proveedor". Un fake que solo entendiera objetos devolvería siempre
+   * lista vacía, y los tests de aislamiento pasarían por el motivo equivocado
+   * — que es peor que fallar.
+   */
+  async find({
+    where,
+  }: {
+    where: Partial<OrderEntity> | Partial<OrderEntity>[];
+  }): Promise<OrderEntity[]> {
+    const conditions = Array.isArray(where) ? where : [where];
+
+    const matches = (row: OrderEntity, cond: Partial<OrderEntity>) =>
+      Object.entries(cond).every(([k, v]) => row[k as keyof OrderEntity] === v);
+
+    return this.rows.filter((row) => conditions.some((cond) => matches(row, cond)));
   }
 }
 
@@ -223,8 +239,8 @@ describe('OrdersService', () => {
     });
   });
 
-  describe('findAll / findOne', () => {
-    it('filters by clientId and providerId', async () => {
+  describe('findAllForUser / findOne', () => {
+    it('solo devuelve órdenes en las que el usuario participa', async () => {
       await makePendingOrder(service);
       const other = await service.createOrder('client-2', {
         providerId: 'provider-2',
@@ -232,12 +248,29 @@ describe('OrdersService', () => {
         scheduledDate: '2026-08-02T10:00:00.000Z',
       });
 
-      const forClient1 = await service.findAll({ clientId: CLIENT_ID });
+      const forClient1 = await service.findAllForUser(CLIENT_ID);
       expect(forClient1).toHaveLength(1);
       expect(forClient1[0].clientId).toBe(CLIENT_ID);
 
-      const forProvider2 = await service.findAll({ providerId: 'provider-2' });
-      expect(forProvider2.map((o) => o.id)).toEqual([other.id]);
+      const forProvider2 = await service.findAllForUser('provider-2');
+      expect(forProvider2.map((o: { id: string }) => o.id)).toEqual([other.id]);
+    });
+
+    it('AISLAMIENTO: un usuario ajeno no ve nada, aunque conozca los UUID', async () => {
+      // Esta es la regresión que cierra el IDOR demostrado: antes el filtro
+      // llegaba por query param y bastaba con pasar el UUID de otra persona.
+      await makePendingOrder(service);
+
+      const intruso = await service.findAllForUser('usuario-sin-relacion');
+      expect(intruso).toHaveLength(0);
+    });
+
+    it('el filtro por rol acota, pero nunca amplía a órdenes ajenas', async () => {
+      await makePendingOrder(service); // CLIENT_ID como cliente
+
+      expect(await service.findAllForUser(CLIENT_ID, { role: 'client' })).toHaveLength(1);
+      // El mismo usuario, mirando como proveedor, no participa en ninguna.
+      expect(await service.findAllForUser(CLIENT_ID, { role: 'provider' })).toHaveLength(0);
     });
 
     it('returns null for a missing order', async () => {

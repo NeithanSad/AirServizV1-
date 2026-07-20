@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "931619638148",
+    "project_id": "livio-4c210",
+    "storage_bucket": "livio-4c210.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:931619638148:android:d1d6152e012209e3be2bd1",
+        "android_client_info": {
+          "package_name": "dev.livio.livioclient"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgIqjsw2Z-e56xMq88ApDC1uZQTxjn8i0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

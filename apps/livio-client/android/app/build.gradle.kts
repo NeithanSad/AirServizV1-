@@ -5,7 +5,10 @@ plugins {
 }
 
 android {
-    namespace = "dev.livio.livio_client"
+    // `livioclient` sin guion bajo: Firebase no admite guiones bajos en el
+    // identificador de paquete, y este debe coincidir EXACTAMENTE con el
+    // `package_name` de google-services.json o FCM no entrega nada.
+    namespace = "dev.livio.livioclient"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,8 +18,9 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "dev.livio.livio_client"
+        // Debe coincidir con el `package_name` de google-services.json.
+        // Cambiarlo tras publicar equivale a una app distinta en Play Store.
+        applicationId = "dev.livio.livioclient"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

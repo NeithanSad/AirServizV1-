@@ -216,7 +216,32 @@ export class OrdersService {
   }
 
   // ── Queries ───────────────────────────────────────────────────────────────
-  findAll(filters: { providerId?: string; clientId?: string }): Promise<OrderEntity[]> {
+  /**
+   * Órdenes en las que participa `userId`, como cliente o como proveedor.
+   *
+   * Antes este método aceptaba `clientId`/`providerId` sueltos desde los query
+   * params, sin comprobar que correspondieran a quien preguntaba: cualquier
+   * usuario autenticado podía listar las órdenes de otro pasando su UUID. El
+   * filtro ya no se acepta desde fuera, se deriva del token.
+   */
+  findAllForUser(
+    userId: string,
+    opts: { role?: 'client' | 'provider' } = {},
+  ): Promise<OrderEntity[]> {
+    // Sin `role`, se devuelven ambas caras: un mismo usuario puede ser cliente
+    // en unas órdenes y proveedor en otras.
+    const where =
+      opts.role === 'client'
+        ? [{ clientId: userId }]
+        : opts.role === 'provider'
+          ? [{ providerId: userId }]
+          : [{ clientId: userId }, { providerId: userId }];
+
+    return this.repo.find({ where, order: { createdAt: 'DESC' } });
+  }
+
+  /** Solo para uso interno/administrativo. Nunca desde una ruta de usuario. */
+  findAllUnscoped(filters: { providerId?: string; clientId?: string }): Promise<OrderEntity[]> {
     return this.repo.find({
       where: {
         ...(filters.providerId && { providerId: filters.providerId }),
