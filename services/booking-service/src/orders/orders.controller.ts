@@ -81,6 +81,15 @@ export class OrdersController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('role') role?: 'client' | 'provider',
   ) {
+    // El panel de administración es una consola de supervisión y necesita ver
+    // todas las transacciones. Es la ÚNICA vía sin acotar, y depende del claim
+    // `role` del token firmado — no de un parámetro que el cliente elija.
+    if (user.role === 'ADMIN') {
+      const all = await this.ordersService.findAllUnscoped({});
+      this.logger.log(`GET /orders — consulta administrativa por ${user.id}`);
+      return { success: true, count: all.length, data: all };
+    }
+
     const orders = await this.ordersService.findAllForUser(user.id, { role });
     return { success: true, count: orders.length, data: orders };
   }

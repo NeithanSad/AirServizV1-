@@ -14,9 +14,9 @@ const api = axios.create({ baseURL: '/api', timeout: 10_000 });
 
 api.interceptors.request.use((cfg) => {
   const token   = localStorage.getItem('airserviz_token');
-  const actorId = localStorage.getItem('airserviz_actor_id');
-  if (token)   cfg.headers.Authorization  = `Bearer ${token}`;
-  if (actorId) cfg.headers['x-actor-id'] = actorId;
+  if (token) cfg.headers.Authorization = `Bearer ${token}`;
+  // x-actor-id ya no se envia: el backend deriva la identidad del JWT
+  // verificado. Confiar en una cabecera del cliente permitia suplantacion.
   return cfg;
 });
 

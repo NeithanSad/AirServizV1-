@@ -16,10 +16,9 @@ bookingApi.interceptors.request.use((config) => {
   const token = localStorage.getItem('airserviz_token');
   const clientId = localStorage.getItem('airserviz_client_id');
   if (token) config.headers.Authorization = `Bearer ${token}`;
-  if (clientId) {
-    config.headers['x-client-id'] = clientId;
-    config.headers['x-actor-id'] = clientId; // status updates performed as the client
-  }
+  // Ya no se envia x-client-id ni x-actor-id: el backend deriva la identidad
+  // del JWT verificado. Enviarlas no hacia nada salvo permitir suplantacion,
+  // porque el servicio confiaba en su valor.
   return config;
 });
 
